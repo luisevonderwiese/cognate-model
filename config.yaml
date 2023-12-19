@@ -1,0 +1,11 @@
+
+lingdata_config_path: setup_comparison_lingdata_config.json
+outdir: data/results/
+
+software:
+  raxml-ng:
+    command: bin/raxml-ng
+    threads: 2
+  pythia:
+    command: pythia
+    predictor: predictors/latest.pckl
