@@ -30,9 +30,9 @@ def add_for_raxml(row, msa_prefix, msa_type, model, gamma = False, partition_mod
         model_name += "+M"
     if gamma:
         model_name += "+G"
-    if paritition_mode != "":
+    if partition_mode != "":
         assert(partition_mode in ["x", "2"])
-        model_name += "_" + paritition_mode
+        model_name += "_" + partition_mode
     run_prefix = os.path.join(msa_prefix, msa_type, model_name)
     prefixes.append(run_prefix)
     msa_path_dict[run_prefix] = row["msa_paths"][msa_type]

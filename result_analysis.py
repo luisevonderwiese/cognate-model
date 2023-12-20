@@ -4,7 +4,7 @@ from lingdata import database
 
 
 
-oudir = "data/results/"
+out_dir = "data/results/"
 database.read_config("setup_comparison_lingdata_config.json")
 df = database.data()
 big_results_dict = {}
@@ -16,6 +16,8 @@ for i, row in df.iterrows():
         msa_path = os.path.join(ds_path, msa_type)
         for run_name in os.listdir(msa_path):
             results_path = os.path.join(msa_path, run_name, "results.json")
+            if not os.path.isfile(results_path):
+                continue
             with open(results_path) as f:
                 result = json.load(f)
             small_results_dict[msa_type + "_" + run_name] = result
