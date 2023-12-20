@@ -4,7 +4,7 @@ outdir: data/results/
 
 software:
   raxml-ng:
-    command: bin/raxml-ng
+    command: ./bin/raxml-ng
     threads: 2
   pythia:
     command: pythia

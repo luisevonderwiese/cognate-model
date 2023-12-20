@@ -22,16 +22,13 @@ pythia_prefixes = []
 pythia_msa_path_dict = {}
 
 multi_models = ["MK"]
-multi_part_models = ["part2MK", "partxMK"]
 
 
-def add_for_raxml(row, msa_prefix, msa_type, model, partitioned = False):
+def add_for_raxml(row, msa_prefix, msa_type, model):
     run_prefix = os.path.join(msa_prefix, msa_type, model)
     prefixes.append(run_prefix)
-    msa_path_dict[run_prefix] = row["msa_path"][msa_type]
-    if partitioned:
-        model_dict[run_prefix] = row["partition_paths"][model]
-    elif model.startswith("MULTI_"):
+    msa_path_dict[run_prefix] = row["msa_paths"][msa_type]
+    if model.startswith("MULTI_"):
         model_dict[run_prefix] = row["MULTIx_" + model]
     else:
         model_dict[run_prefix] = model
@@ -61,8 +58,6 @@ for i, row in df.iterrows():
         for model in multi_models:
            add_for_raxml(row, msa_prefix, "multi", "MULTIx_" + model)
            add_for_raxml(row, msa_prefix, "multi", "MULTIx_" + model + "+G")
-        for model in multi_part_models:
-            add_for_raxml(row, msa_prefix, "multi", model, partitioned = True)
 
     if row["msa_paths"]["catg_multi"] != "":
         for model in multi_models:
@@ -74,8 +69,6 @@ for i, row in df.iterrows():
         for model in multi_models:
            add_for_raxml(row, msa_prefix, "ambig", "MULTIx_" + model)
            add_for_raxml(row, msa_prefix, "ambig", "MULTIx_" + model + "+G")
-        for model in multi_part_models:
-            add_for_raxml(row, msa_prefix, "ambig", model, partitioned = True)
 
 
 seed = 2

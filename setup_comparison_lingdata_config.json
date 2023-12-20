@@ -4,7 +4,7 @@
 "num_samples": 0,
 "data_dir" : "data/lingdata",
 "native_dir" : "data/lingdata",
-"sources" : ["lexibank", "SequenceComparison", "correspondence-patterns"],
+"sources" : ["lexibank", "SequenceComparison", "correspondence-pattern-data"],
 "ling_types" : ["cognate", "structural", "correspondence-patterns"],
 "msa_types" : ["bin", "multi", "catg_bin", "catg_multi", "ambig"],
 "partition_types" : [
