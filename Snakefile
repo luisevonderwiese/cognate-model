@@ -77,10 +77,10 @@ for i, row in df.iterrows():
         for model in multi_models:
            add_for_raxml(row, msa_prefix, "multi", model)
            add_for_raxml(row, msa_prefix, "multi", model, True)
-           add_for_raxml(row, msa_prefix, "multi", model, False, x)
-           add_for_raxml(row, msa_prefix, "multi", model, True, x)
-           add_for_raxml(row, msa_prefix, "multi", model, False, 2)
-           add_for_raxml(row, msa_prefix, "multi", model, True, 2)
+           add_for_raxml(row, msa_prefix, "multi", model, False, "x")
+           add_for_raxml(row, msa_prefix, "multi", model, True, "x")
+           add_for_raxml(row, msa_prefix, "multi", model, False, "2")
+           add_for_raxml(row, msa_prefix, "multi", model, True, "2")
 
     if row["msa_paths"]["catg_multi"] != "":
         for model in multi_models:
