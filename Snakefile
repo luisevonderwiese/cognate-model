@@ -30,9 +30,15 @@ def add_for_raxml(row, msa_prefix, msa_type, model, gamma = False, partition_mod
         model_name += "+M"
     if gamma:
         model_name += "+G"
+<<<<<<< HEAD
     if partition_mode != "":
         assert(partition_mode in ["x", "2"])
         model_name += "_" + partition_mode
+=======
+    if paritition_mode != "":
+        assert(partition_mode in ["x", "2"])
+        model_name += "_" + paritition_mode
+>>>>>>> 12f1b1c (....)
     run_prefix = os.path.join(msa_prefix, msa_type, model_name)
     prefixes.append(run_prefix)
     msa_path_dict[run_prefix] = row["msa_paths"][msa_type]
@@ -64,26 +70,30 @@ def add_for_pythia(row, msa_prefix, msa_type):
 
 for i, row in df.iterrows():
     msa_prefix = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
-    run_prefix = os.path.join(msa_prefix, "prototype", "GTR")
-    prefixes.append(run_prefix)
-    msa_path_dict[run_prefix] = row["msa_paths"]["prototype"]
-    model_dict[run_prefix] = row["MULTIx_GTR_prototype"]
-    prob_msa_dict[run_prefix] = "off"
 
-    pythia_prefix = os.path.join(msa_prefix, "prototype")
-    pythia_prefixes.append(pythia_prefix)
-    pythia_msa_path_dict[pythia_prefix] = row["msa_paths"]["prototype"]
+    add_for_pythia(row, msa_prefix, "bin")
 
+    add_for_raxml(row, msa_prefix, "bin", "BIN")
+    add_for_raxml(row, msa_prefix, "bin", "BIN", True)
+    add_for_raxml(row, msa_prefix, "catg_bin", "BIN")
+    add_for_raxml(row, msa_prefix, "catg_bin", "BIN", True)
 
     if row["msa_paths"]["multi"] != "":
         add_for_pythia(row, msa_prefix, "multi")
         for model in multi_models:
            add_for_raxml(row, msa_prefix, "multi", model)
            add_for_raxml(row, msa_prefix, "multi", model, True)
+<<<<<<< HEAD
            add_for_raxml(row, msa_prefix, "multi", model, False, "x")
            add_for_raxml(row, msa_prefix, "multi", model, True, "x")
            add_for_raxml(row, msa_prefix, "multi", model, False, "2")
            add_for_raxml(row, msa_prefix, "multi", model, True, "2")
+=======
+           add_for_raxml(row, msa_prefix, "multi", model, False, x)
+           add_for_raxml(row, msa_prefix, "multi", model, True, x)
+           add_for_raxml(row, msa_prefix, "multi", model, False, 2)
+           add_for_raxml(row, msa_prefix, "multi", model, True, 2)
+>>>>>>> 12f1b1c (....)
 
     if row["msa_paths"]["catg_multi"] != "":
         for model in multi_models:
