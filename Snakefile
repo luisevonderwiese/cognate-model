@@ -21,90 +21,21 @@ prob_msa_dict = {}
 pythia_prefixes = []
 pythia_msa_path_dict = {}
 
-multi_models = ["MK"]
-
-
-def add_for_raxml(row, msa_prefix, msa_type, model, gamma = False, partition_mode = ""):
-    model_name = model
-    if msa_type == "ambig":
-        model_name += "+M"
-    if gamma:
-        model_name += "+G"
-<<<<<<< HEAD
-    if partition_mode != "":
-        assert(partition_mode in ["x", "2"])
-        model_name += "_" + partition_mode
-=======
-    if paritition_mode != "":
-        assert(partition_mode in ["x", "2"])
-        model_name += "_" + paritition_mode
->>>>>>> 12f1b1c (....)
-    run_prefix = os.path.join(msa_prefix, msa_type, model_name)
-    prefixes.append(run_prefix)
-    msa_path_dict[run_prefix] = row["msa_paths"][msa_type]
-    if partition_mode != "":
-        model_dict[run_prefix] = row["partition_paths"][msa_type + "_" + model_name]
-    else:
-        if model in ["MK", "GTR"]:
-            if msa_type == "ambig":
-                model_dict[run_prefix] = row["MULTIx_" + model + "+M"]
-            else:
-                assert(msa_type in ["multi", "catg_multi"])
-                model_dict[run_prefix] = row["MULTIx_" + model]
-        else:
-            assert(model == "BIN")
-            assert(msa_type in ["bin", "catg_bin"])
-            model_dict[run_prefix] = model
-        if gamma:
-            model_dict[run_prefix] += "+G"
-    if msa_type.startswith("catg_"):
-        prob_msa_dict[run_prefix] = "on"
-    else:
-        prob_msa_dict[run_prefix] = "off"
-
-def add_for_pythia(row, msa_prefix, msa_type):
-    pythia_prefix = os.path.join(msa_prefix, msa_type)
-    pythia_prefixes.append(pythia_prefix)
-    pythia_msa_path_dict[pythia_prefix] = row["msa_paths"][msa_type]
 
 
 for i, row in df.iterrows():
     msa_prefix = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
+    run_prefix = os.path.join(msa_prefix, "prototype", "GTR")
+    prefixes.append(run_prefix)
+    msa_path_dict[run_prefix] = row["msa_paths"]["prototype"]
+    model_dict[run_prefix] = row["MULTIx_GTR_prototype"]
+    prob_msa_dict[run_prefix] = "off"
 
-    add_for_pythia(row, msa_prefix, "bin")
+    pythia_prefix = os.path.join(msa_prefix, "prototype")
+    pythia_prefixes.append(pythia_prefix)
+    pythia_msa_path_dict[pythia_prefix] = row["msa_paths"]["prototype"]
 
-    add_for_raxml(row, msa_prefix, "bin", "BIN")
-    add_for_raxml(row, msa_prefix, "bin", "BIN", True)
-    add_for_raxml(row, msa_prefix, "catg_bin", "BIN")
-    add_for_raxml(row, msa_prefix, "catg_bin", "BIN", True)
 
-    if row["msa_paths"]["multi"] != "":
-        add_for_pythia(row, msa_prefix, "multi")
-        for model in multi_models:
-           add_for_raxml(row, msa_prefix, "multi", model)
-           add_for_raxml(row, msa_prefix, "multi", model, True)
-<<<<<<< HEAD
-           add_for_raxml(row, msa_prefix, "multi", model, False, "x")
-           add_for_raxml(row, msa_prefix, "multi", model, True, "x")
-           add_for_raxml(row, msa_prefix, "multi", model, False, "2")
-           add_for_raxml(row, msa_prefix, "multi", model, True, "2")
-=======
-           add_for_raxml(row, msa_prefix, "multi", model, False, x)
-           add_for_raxml(row, msa_prefix, "multi", model, True, x)
-           add_for_raxml(row, msa_prefix, "multi", model, False, 2)
-           add_for_raxml(row, msa_prefix, "multi", model, True, 2)
->>>>>>> 12f1b1c (....)
-
-    if row["msa_paths"]["catg_multi"] != "":
-        for model in multi_models:
-           add_for_raxml(row, msa_prefix, "catg_multi", model)
-           add_for_raxml(row, msa_prefix, "catg_multi", model, True)
-
-    if row["msa_paths"]["ambig"] != "":
-        add_for_pythia(row, msa_prefix, "ambig")
-        for model in multi_models:
-           add_for_raxml(row, msa_prefix, "ambig", model)
-           add_for_raxml(row, msa_prefix, "ambig", model, True)
 
 
 seed = 2
