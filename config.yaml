@@ -1,6 +1,6 @@
 
-lingdata_config_path: setup_comparison_lingdata_config.json
-outdir: data/results/
+lingdata_config_path: cognate_lingdata_config.json
+outdir: data/results_cognate/
 
 software:
   raxml-ng:
