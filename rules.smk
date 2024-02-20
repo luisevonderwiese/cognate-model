@@ -20,7 +20,7 @@ rule raxml:
         "--prefix {params.prefix}inference "
         "--seed {params.seed} "
         "--threads {params.threads} "
-        "--prob-msa {params.prob_msa} "
+        "--prob-msa {params.prob_msa} --redo "
         "> {output.inference_log} "
 
 

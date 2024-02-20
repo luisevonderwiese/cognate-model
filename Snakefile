@@ -25,13 +25,13 @@ pythia_msa_path_dict = {}
 
 for i, row in df.iterrows():
     msa_prefix = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
-    run_prefix = os.path.join(msa_prefix, "prototype", "COG"])
+    run_prefix = os.path.join(msa_prefix, "prototype", "COG")
     prefixes.append(run_prefix)
     msa_path_dict[run_prefix] = row["msa_paths"]["prototype"]
     model_dict[run_prefix] = row["COGx"]
     prob_msa_dict[run_prefix] = "off"
 
-    run_prefix = os.path.join(msa_prefix, "bin", "BIN"])
+    run_prefix = os.path.join(msa_prefix, "bin", "BIN")
     prefixes.append(run_prefix)
     msa_path_dict[run_prefix] = row["msa_paths"]["bin"]
     model_dict[run_prefix] = "BIN"
