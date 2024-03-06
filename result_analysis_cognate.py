@@ -44,6 +44,10 @@ def substitution_rates(prefix, x):
             break
     if rates == []:
         return rates
+    if x == -1: #code for single lamda rate
+        if len(rates) <= 2:
+            return rates
+        return [rates[2], rates[0]]
     if x == 2:
         return rates
     elif x == 4:
@@ -110,9 +114,10 @@ for i, row in df.iterrows():
                 gq_distances[run_name].append(d)
             else:
                 r.append(float("nan"))
+                gq_distances[run_name].append(float("nan"))
             if run_name == "COG":
                 prefix = os.path.join(msa_path, run_name, "inference")
-                r.append(substitution_rates(prefix, row["max_values_prototype"]))
+                r.append(substitution_rates(prefix, -1))
                 r.append(base_frequencies(prefix, row["max_values_prototype"]))
 
     results.append(r)

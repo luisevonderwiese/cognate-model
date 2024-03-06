@@ -5,7 +5,7 @@ outdir: data/results_cognate/
 software:
   raxml-ng:
     command: ./bin/raxml-ng
-    threads: 2
+    threads: auto 
   pythia:
     command: pythia
     predictor: predictors/latest.pckl
