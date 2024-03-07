@@ -117,7 +117,7 @@ for i, row in df.iterrows():
                 gq_distances[run_name].append(float("nan"))
             if run_name == "COG":
                 prefix = os.path.join(msa_path, run_name, "inference")
-                r.append(substitution_rates(prefix, -1))
+                r.append(substitution_rates(prefix, row["max_values_prototype"])) #-1 for single
                 r.append(base_frequencies(prefix, row["max_values_prototype"]))
 
     results.append(r)
