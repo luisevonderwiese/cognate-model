@@ -31,6 +31,13 @@ for i, row in df.iterrows():
     model_dict[run_prefix] = row["COGx"]
     prob_msa_dict[run_prefix] = "off"
 
+    for x in range(2, 7):
+        run_prefix = os.path.join(msa_prefix, "prototype_part_" + str(x), "COG")
+        prefixes.append(run_prefix)
+        msa_path_dict[run_prefix] = row["msa_paths"]["prototype_part_" + str(x)]
+        model_dict[run_prefix] = row["COGx"]
+        prob_msa_dict[run_prefix] = "off"
+
     run_prefix = os.path.join(msa_prefix, "bin", "BIN")
     prefixes.append(run_prefix)
     msa_path_dict[run_prefix] = row["msa_paths"]["bin"]

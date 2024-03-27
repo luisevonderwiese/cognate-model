@@ -85,88 +85,92 @@ def base_frequencies(prefix, x):
         cursor *= 2
     return final_f
 
+def gq_distance_analysis(df):
+    results = []
+    gq_distances = {"BIN" : [], "COG": []}
+    for i, row in df.iterrows():
+        msa_prefix = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
+        glottolog_tree_path = row["glottolog_tree_path"]
+        r = []
+        r.append(row["ds_id"])
+        ds_path = os.path.join(out_dir, msa_prefix)
+        for msa_type in ["bin", "prototype"]:
+            msa_path = os.path.join(ds_path, msa_type)
+            for run_name in os.listdir(msa_path):
+                if run_name.startswith("pythia"):
+                        continue
+                best_tree_path = os.path.join(msa_path, run_name, "inference.raxml.bestTree")
+                if glottolog_tree_path == glottolog_tree_path and os.path.isfile(glottolog_tree_path)  and os.path.isfile(best_tree_path):
+                    d = gq_distance(best_tree_path, glottolog_tree_path)
+                    r.append(d)
+                    gq_distances[run_name].append(d)
+                else:
+                    r.append(float("nan"))
+                    gq_distances[run_name].append(float("nan"))
+            results.append(r)
+
+    print(tabulate(results, tablefmt="pipe", floatfmt=".3f", headers = ["ds_id", "GQ BIN", "GQ COG"]))
+    plt.axline([0, 0], slope=1, color = 'lightgray', linewidth = 1, linestyle = "--")
+    plt.scatter(gq_distances["BIN"], gq_distances["COG"], s=10)
+    plt.xlabel('BIN')
+    plt.ylabel('COG')
+    plt.savefig(os.path.join(plots_dir, "scatter_cognate.png"))
+    plt.clf()
+
+def get_all_substitution_rates(df, msa_type):
+    r = []
+    for i, row in df.iterrows():
+        prefix = os.path.join(out_dir, msa_prefix, msa_type, "COG", "inference")
+        r.append(substitution_rates(prefix, row["max_values_prototype"])) #-1 for single
+    return r
+
+def get_all_base_frequencies(df, msa_type):
+    r = []
+    for i, row in df.iterrows():
+        prefix = os.path.join(out_dir, msa_prefix, msa_type, "COG", "inference")
+        r.append(base_frequencies(prefix, row["max_values_prototype"]))
+    return r
+
+def rates_stacked_plot(all_rates, file_name):
+    max_num = max([len(rates) for rates in all_rates])
+    fig,ax = plt.subplots(figsize=(40, 30))
+    x = range(len(all_rates))
+    y_old = [0 for el in x]
+    for num in range(max_num):
+        y_new = []
+        for rates in all_rates:
+            if len(rates) > num:
+                y_new.append(rates[num] / sum(rates))
+            else:
+                y_new.append(0)
+        ax.bar(x, y_new, bottom=y_old, label = str(num))
+        for i in x:
+            y_old[i] = y_old[i] + y_new[i]
+    ax.legend()
+    plt.savefig(os.path.join(plots_dir, file_name))
+    plt.clf()
 
 
 
-out_dir = "data/results_cognate/"
-plots_dir = "data/plots_cognate"
+rate_mode = "single"
+rate_mode = "multiple"
+force_mode = "force"
+force_mode = "noforce"
+out_dir = "data/results_cognate_" + rate_mode + "_" + force_mode + "/"
+plots_dir = "data/plots_cognate_" + rate_mode + "_" + force_mode + "/"
 if not os.path.isdir(plots_dir):
     os.makedirs(plots_dir)
+
+
+
 database.read_config("cognate_lingdata_config.json")
 df = database.data()
-results = []
-gq_distances = {"BIN" : [], "COG": []}
-for i, row in df.iterrows():
-    msa_prefix = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
-    glottolog_tree_path = row["glottolog_tree_path"]
-    r = []
-    r.append(row["ds_id"])
-    ds_path = os.path.join(out_dir, msa_prefix)
-    for msa_type in ["bin", "prototype"]:
-        msa_path = os.path.join(ds_path, msa_type)
-        for run_name in os.listdir(msa_path):
-            if run_name.startswith("pythia"):
-                    continue
-            best_tree_path = os.path.join(msa_path, run_name, "inference.raxml.bestTree")
-            if glottolog_tree_path == glottolog_tree_path and os.path.isfile(glottolog_tree_path)  and os.path.isfile(best_tree_path):
-                d = gq_distance(best_tree_path, glottolog_tree_path)
-                r.append(d)
-                gq_distances[run_name].append(d)
-            else:
-                r.append(float("nan"))
-                gq_distances[run_name].append(float("nan"))
-            if run_name == "COG":
-                prefix = os.path.join(msa_path, run_name, "inference")
-                r.append(substitution_rates(prefix, row["max_values_prototype"])) #-1 for single
-                r.append(base_frequencies(prefix, row["max_values_prototype"]))
 
-    results.append(r)
-
-print(tabulate(results, tablefmt="pipe", floatfmt=".3f", headers = ["ds_id", "GQ BIN", "GQ COG", "subtitution rates", "base_frequencies"]))
+gq_distance_analysis(df)
 
 
-plt.axline([0, 0], slope=1, color = 'lightgray', linewidth = 1, linestyle = "--")
-plt.scatter(gq_distances["BIN"], gq_distances["COG"], s=10)
-plt.xlabel('BIN')
-plt.ylabel('COG')
-plt.savefig(os.path.join(plots_dir, "scatter_cognate.png")) 
-plt.clf()
+msa_types = ["prototype"] + ["prototype_part_" + str(i) for i in range(2, 7)]
 
-all_rates = [r[3] for r in results]
-max_num = max([len(rates) for rates in all_rates])
-fig,ax = plt.subplots(figsize=(40, 30))
-x = range(len(all_rates))
-y_old = [0 for el in x]
-for num in range(max_num):
-    y_new = []
-    for rates in all_rates:
-        if len(rates) > num:
-            y_new.append(rates[num] /sum(rates))
-        else:
-            y_new.append(0)
-    ax.bar(x, y_new, bottom=y_old, label = str(num))
-    for i in x:
-        y_old[i] = y_old[i] + y_new[i]
-ax.legend()
-plt.savefig(os.path.join(plots_dir, "stacked_substitution_rates.png"))
-plt.clf()
-
-all_rates = [r[4] for r in results]
-max_num = max([len(rates) for rates in all_rates])
-fig,ax = plt.subplots(figsize=(40, 30))
-x = range(len(all_rates))
-y_old = [0 for el in x]
-for num in range(max_num):
-    y_new = []
-    for rates in all_rates:
-        if len(rates) > num:
-            y_new.append(rates[num] / sum(rates))
-        else:
-            y_new.append(0)
-    ax.bar(x, y_new, bottom=y_old, label = str(num))
-    for i in x:
-        y_old[i] = y_old[i] + y_new[i]
-ax.legend()
-plt.savefig(os.path.join(plots_dir, "stacked_base_frequencies.png"))
-plt.clf()
-
+for msa_type in msa_types:
+    rates_stacked_plot(get_all_substitution_rates(df, msa_type), "substitution_rates_" + msa_type + ".png")
+    rates_stacked_plot(get_all_base_frequencies(df, msa_type), "base_frequencies_" + msa_type + ".png")
