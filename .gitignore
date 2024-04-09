@@ -2,3 +2,7 @@ data/
 **/__pycache__/
 temp.phy.pythia.reduced
 .snakemake/
+test.raxml.*
+data_old/*
+data_old2/*
+bin/old/*

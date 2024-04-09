@@ -2,9 +2,10 @@ import os
 import sys
 import pandas as pd
 from lingdata import database
+import math
 
 
-configfile: "config.yaml"
+configfile: "config_multiple_force.yaml"
 
 raxmlng_command = config["software"]["raxml-ng"]["command"]
 pythia_command = config["software"]["pythia"]["command"]
@@ -31,22 +32,23 @@ for i, row in df.iterrows():
     model_dict[run_prefix] = row["COGx"]
     prob_msa_dict[run_prefix] = "off"
 
-    for x in range(2, 7):
-        run_prefix = os.path.join(msa_prefix, "prototype_part_" + str(x), "COG")
-        prefixes.append(run_prefix)
-        msa_path_dict[run_prefix] = row["msa_paths"]["prototype_part_" + str(x)]
-        model_dict[run_prefix] = row["COGx"]
-        prob_msa_dict[run_prefix] = "off"
+    #for x in range(3, 6):
+    #    if os.path.isfile(row["msa_paths"]["prototype_part_" + str(x)]):
+    #        run_prefix = os.path.join(msa_prefix, "prototype_part_" + str(x), "COG")
+    #        prefixes.append(run_prefix)
+    #        msa_path_dict[run_prefix] = row["msa_paths"]["prototype_part_" + str(x)]
+    #        model_dict[run_prefix] = "COG" + str(int(math.pow(2, x)))
+    #        prob_msa_dict[run_prefix] = "off"
 
-    run_prefix = os.path.join(msa_prefix, "bin", "BIN")
-    prefixes.append(run_prefix)
-    msa_path_dict[run_prefix] = row["msa_paths"]["bin"]
-    model_dict[run_prefix] = "BIN"
-    prob_msa_dict[run_prefix] = "off"
+    #run_prefix = os.path.join(msa_prefix, "bin", "BIN")
+    #prefixes.append(run_prefix)
+    #msa_path_dict[run_prefix] = row["msa_paths"]["bin"]
+    #model_dict[run_prefix] = "BIN"
+    #prob_msa_dict[run_prefix] = "off"
 
-    pythia_prefix = os.path.join(msa_prefix, "bin")
-    pythia_prefixes.append(pythia_prefix)
-    pythia_msa_path_dict[pythia_prefix] = row["msa_paths"]["bin"]
+    #pythia_prefix = os.path.join(msa_prefix, "bin")
+    #pythia_prefixes.append(pythia_prefix)
+    #pythia_msa_path_dict[pythia_prefix] = row["msa_paths"]["bin"]
 
 
 

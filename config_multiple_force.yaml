@@ -1,0 +1,11 @@
+
+lingdata_config_path: cognate_lingdata_config.json
+outdir: data/results_cognate_multiple_force/
+
+software:
+  raxml-ng:
+    command: ./bin/raxml-ng-multiple-force
+    threads: auto
+  pythia:
+    command: pythia
+    predictor: predictors/latest.pckl
