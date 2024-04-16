@@ -5,7 +5,7 @@ from lingdata import database
 from ete3 import Tree
 from tabulate import tabulate
 import matplotlib.pyplot as plt
-
+from Bio import AlignIO
 
 def rf_distance(t1, t2):
     if t1 is None or t2 is None:
@@ -111,10 +111,12 @@ def gq_distance_analysis(df):
                 if glottolog_tree_path == glottolog_tree_path and os.path.isfile(glottolog_tree_path)  and os.path.isfile(best_tree_path):
                     d = gq_distance(best_tree_path, glottolog_tree_path)
                     r.append(d)
-                    gq_distances[run_name].append(d)
                 else:
                     r.append(float("nan"))
-                    gq_distances[run_name].append(float("nan"))
+
+        if r[-1] == r[-1] and r[-2] == r[-2]:
+            gq_distances["COG"].append(r[-1])
+            gq_distances["BIN"].append(r[-2])
         results.append(r)
 
     print(tabulate(results, tablefmt="pipe", floatfmt=".3f", headers = ["ds_id", "GQ BIN", "GQ COG"]))
@@ -197,10 +199,51 @@ def rates_stacked_plot(all_rates, file_name, plot_type):
     plt.clf()
     plt.close()
 
+def get_msa_size(msa_path):
+    try:
+        align = AlignIO.read(msa_path, "phylip-relaxed")
+        return align.get_alignment_length() / len(align)
+    except:
+        return float("nan")
+
+
+def get_relative_lambda_1(prefix, x):
+    rates = substitution_rates(prefix, x)
+    if len(rates) < 2:
+        return float("nan")
+    rates = [rate / sum(rates) for rate in rates]
+    return rates[1]
+
+
+def size_correlation(df, msa_type):
+    sizes = []
+    rates = []
+    for i, row in df.iterrows():
+        msa_path = row["msa_paths"][msa_type]
+        msa_prefix = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
+        prefix = os.path.join(out_dir, msa_prefix, msa_type, "COG", "inference")
+        x = int(math.pow(2, int(msa_type.split("_")[-1])))
+        if msa_path == msa_path and os.path.isfile(msa_path):
+            size = get_msa_size(msa_path)
+            rate = get_relative_lambda_1(prefix, x)
+            if rate == rate and size == size:
+                rates.append(rate)
+                sizes.append(size)
+    plt.scatter(sizes, rates, s = 10)
+    plt.xscale('log')
+    plt.xlabel('#sites/#taxa')
+    plt.ylabel('relative ' + r'$\lambda_1$')
+    plt.savefig(os.path.join(plots_dir, "size_correlation_" + msa_type + ".png"))
+    plt.clf()
+    plt.close()
+
+
+
 database.read_config("cognate_lingdata_config.json")
 df = database.data()
-
 configurations = [("single", "noforce"), ("multiple", "force")]
+#configurations = [("multiple", "force")]
+
 for rate_mode, force_mode in configurations:
     out_dir = "data/results_cognate_" + rate_mode + "_" + force_mode + "/"
     plots_dir = "data/plots_cognate_" + rate_mode + "_" + force_mode + "/"
@@ -210,7 +253,9 @@ for rate_mode, force_mode in configurations:
     #gq_distance_analysis(df)
 
     #msa_types = ["prototype"] + ["prototype_part_" + str(i) for i in range(2, 7)]
+    #msa_types = ["prototype"]
     msa_types = ["prototype_part_" + str(i) for i in range(3, 6)] 
     for msa_type in msa_types:
+        size_correlation(df, msa_type)
         rates_stacked_plot(get_all_substitution_rates(df, msa_type), "substitution_rates_" + msa_type + ".png", "sr")
         rates_stacked_plot(get_all_base_frequencies(df, msa_type), "base_frequencies_" + msa_type + ".png", "bf")
