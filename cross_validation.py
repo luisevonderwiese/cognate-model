@@ -6,7 +6,7 @@ from ete3 import Tree
 from tabulate import tabulate
 import matplotlib.pyplot as plt
 from Bio import AlignIO
-
+from Bio.AlignIO.PhylipIO import RelaxedPhylipWriter
 
 
 def run_inference(msa_path, model, prefix, args = ""):
@@ -16,13 +16,13 @@ def run_inference(msa_path, model, prefix, args = ""):
     prefix_dir = "/".join(prefix.split("/")[:-1])
     if not os.path.isdir(prefix_dir):
         os.makedirs(prefix_dir)
-    if not os.path.isfile(best_tree_path(prefix)):
+    if not os.path.isfile(prefix + ".raxml.bestTree"):
         args = args + " --redo"
     command = "./bin/raxml-ng-multiple-force"
     command += " --msa " + msa_path
     command += " --model " + model
     command += " --prefix " + prefix
-    command += " --threads auto --seed 2"
+    command += " --threads auto --seed 2 --force model_lh_impr"
     command += " " + args
     os.system(command)
 
@@ -34,18 +34,38 @@ def run_evaluate(msa_path, prefix, ref_prefix, args = ""):
     prefix_dir = "/".join(prefix.split("/")[:-1])
     if not os.path.isdir(prefix_dir):
         os.makedirs(prefix_dir)
-    if not os.path.isfile(best_tree_path(prefix)):
-        args = args + " --redo"
+    if not os.path.isfile(ref_prefix + ".raxml.bestModel"):
+        return
+    with open(ref_prefix + ".raxml.bestModel", "r") as model_file:
+        model =  model_file.readlines()[0].split(",")[0]
     command = "./bin/raxml-ng-multiple-force --evaluate "
     command += " --msa " + msa_path
     command += " --tree " + ref_prefix + ".raxml.bestTree"
-    command += " --model " + ref_prefix + ".raxml.bestModel"
+    command += " --model " + model
     command += " --prefix " + prefix
     command += " --threads auto --seed 2 --opt-model off --opt-branches off"
     command += " " + args
     os.system(command)
 
+def run_check(msa_path, ref_prefix, args = ""):
+    if not os.path.isfile(msa_path):
+        print("MSA " + msa_path + " does not exist")
+        return
+    if not os.path.isfile(ref_prefix + ".raxml.bestModel"):
+        return
+    with open(ref_prefix + ".raxml.bestModel", "r") as model_file:
+        model =  model_file.readlines()[0].split(",")[0]
+    command = "./bin/raxml-ng-multiple-force --check "
+    command += " --msa " + msa_path
+    command += " --model " + ref_prefix + ".raxml.bestModel"
+    command += " --prefix check --redo --threads auto --seed 2"
+    command += " " + args
+    os.system(command)
+
+
 def final_llh(prefix):
+    if not os.path.isfile(prefix + ".raxml.log"):
+        return float("nan")
     with open(prefix + ".raxml.log", "r") as logfile:
         lines = logfile.readlines()
     for line in lines:
@@ -84,7 +104,7 @@ def create_cv_data(df, msa_type):
 
 def train_raxml_ng(df, msa_type):
     kappa = int(msa_type.split("_")[-1])
-    x = math.pow(2, kappa)
+    x = int(math.pow(2, kappa))
     model = "COG" + str(x)
     for i, row in df.iterrows():
         msa_prefix = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
@@ -100,12 +120,14 @@ def test_raxml_ng(df, msa_type):
     for i, row in df.iterrows():
         msa_prefix = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
         train_dir = os.path.join(cv_data_dir, msa_prefix, "train")
+        train_msa_path = os.path.join(train_dir, msa_type + ".phy")
         if not os.path.isfile(train_msa_path):
             continue
         ref_prefix = os.path.join(cv_results_dir, msa_prefix, "train", msa_type)
         prefix = os.path.join(cv_results_dir, msa_prefix, "test", msa_type)
         test_dir = os.path.join(cv_data_dir, msa_prefix, "test")
         msa_path = os.path.join(test_dir, msa_type + ".phy")
+        #run_check(msa_path, ref_prefix)
         run_evaluate(msa_path, prefix, ref_prefix)
 
 
@@ -114,6 +136,10 @@ def validate(df, msa_type):
     headers = ["msa", "train_llh", "test_llh"]
     for i, row in df.iterrows():
         msa_prefix = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
+        train_dir = os.path.join(cv_data_dir, msa_prefix, "train")
+        train_msa_path = os.path.join(train_dir, msa_type + ".phy")
+        if not os.path.isfile(train_msa_path):
+            continue
         ref_prefix = os.path.join(cv_results_dir, msa_prefix, "train", msa_type)
         prefix = os.path.join(cv_results_dir, msa_prefix, "test", msa_type)
         train_llh = final_llh(ref_prefix)
@@ -129,10 +155,10 @@ def validate(df, msa_type):
 
 database.read_config("cognate_lingdata_config.json")
 df = database.data()
-cv_data_dir = "data/lingdata/msa_cv"
-cv_results_dir = "data/lingdata/results_cv"
+cv_data_dir = "data/lingdata_cognate/msa_cv"
+cv_results_dir = "data/results_cv"
 msa_type = "prototype_part_3"
-create_cv_data(df, msa_type)
-train_raxml_ng(df, msa_type)
-test_raxml_ng(df, msa_type)
+#create_cv_data(df, msa_type)
+#train_raxml_ng(df, msa_type)
+#test_raxml_ng(df, msa_type)
 validate(df, msa_type)
