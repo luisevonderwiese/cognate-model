@@ -106,6 +106,7 @@ def train_raxml_ng(df, msa_type):
     kappa = int(msa_type.split("_")[-1])
     x = int(math.pow(2, kappa))
     model = "COG" + str(x)
+    model = "MULTI" + str(x) + "_GTR"
     for i, row in df.iterrows():
         msa_prefix = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
         train_dir = os.path.join(cv_data_dir, msa_prefix, "train")
@@ -156,9 +157,9 @@ def validate(df, msa_type):
 database.read_config("cognate_lingdata_config.json")
 df = database.data()
 cv_data_dir = "data/lingdata_cognate/msa_cv"
-cv_results_dir = "data/results_cv"
+cv_results_dir = "data/results_cv_gtr"
 msa_type = "prototype_part_3"
 #create_cv_data(df, msa_type)
-#train_raxml_ng(df, msa_type)
-#test_raxml_ng(df, msa_type)
+train_raxml_ng(df, msa_type)
+test_raxml_ng(df, msa_type)
 validate(df, msa_type)
