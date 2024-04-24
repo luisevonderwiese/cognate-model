@@ -21,7 +21,7 @@ def run_inference(msa_path, model, prefix, args = ""):
     command += " --msa " + msa_path
     command += " --model " + model
     command += " --prefix " + prefix
-    command += " --threads auto --seed 2 --force model_lh_impr"
+    command += " --threads auto --seed 2 --force model_lh_impr --blopt nr_safe"
     command += " " + args
     os.system(command)
 
@@ -39,7 +39,7 @@ def run_bootstrap(msa_path, model, prefix, args = ""):
     command += " --msa " + msa_path
     command += " --model " + model
     command += " --prefix " + prefix
-    command += " --threads auto --seed 2 --force model_lh_impr"
+    command += " --threads auto --seed 2 --force model_lh_impr --blopt nr_safe"
     command += " " + args
     os.system(command)
 
@@ -126,27 +126,33 @@ def supports(df, msa_type, model):
         prefix = os.path.join(results_dir, msa_string, "support")
         run_support(inference_prefix, bootstrap_prefix, prefix)
 
-def analyze(df, msa_type, model):
-    results_dir = os.path.join(results_base_dir, model)
+def analyze(df, configs):
     r = []
-    headers = ["ds_id", "mean", "median", "var"]
+    headers = ["ds_id"] + [model for _,model in configs]
     for i, row in df.iterrows():
-        msa_path = row["msa_paths"][msa_type]
-        if not os.path.isfile(msa_path):
-            continue
-        msa_string = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
-        prefix = os.path.join(results_dir, msa_string, "support")
-        s = support_values(prefix)
-        r.append(row["ds_id"], s.mean(), s.median(), s.var())
+        res_row = [row["ds_id"]]
+        for msa_type, model in configs:
+            results_dir = os.path.join(results_base_dir, model)
+            msa_path = row["msa_paths"][msa_type]
+            if not os.path.isfile(msa_path):
+                break
+            msa_string = "_".join([row["ds_id"], row["source"], row["ling_type"], row["family"]])
+            prefix = os.path.join(results_dir, msa_string, "support")
+            s = support_values(prefix)
+            res_row.append(np.mean(s))
+        if len(res_row) == 4:
+            r.append(res_row)
     print(model)
     print(tabulate(r, tablefmt="pipe", headers = headers))
 
 
 database.read_config("cognate_lingdata_config.json")
+#database.compile()
 df = database.data()
 results_base_dir = "data/results_bootstrapping"
-for (msa_type, model) in [("bin_part_3", "BIN"), ("prototype_part_3", "GTR"), ("prototype_part_3", "COG")]:
-    inferences(df, msa_type, model)
-    bootstraps(df, msa_type, model)
-    supports(df, msa_type, model)
-    analyze(df, msa_type, model)
+configs = [("bin_part_3", "BIN"), ("prototype_part_3", "GTR"), ("prototype_part_3", "COG")]
+#for (msa_type, model) in configs:
+   # inferences(df, msa_type, model)
+   # bootstraps(df, msa_type, model)
+   # supports(df, msa_type, model)
+analyze(df, configs)
