@@ -63,6 +63,7 @@ def support_values(prefix):
     if not os.path.isfile(prefix + ".raxml.support"):
         return []
     support_tree = Tree(prefix + ".raxml.support")
+    print([node.dist for node in support_tree.traverse("postorder") if node.dist > 1.0])
     supports = [node.dist / 100 for node in support_tree.traverse("postorder")]
     return supports
 

@@ -157,9 +157,9 @@ def validate(df, msa_type):
 database.read_config("cognate_lingdata_config.json")
 df = database.data()
 cv_data_dir = "data/lingdata_cognate/msa_cv"
-cv_results_dir = "data/results_cv_gtr"
+cv_results_dir = "data/results_cv"
 msa_type = "prototype_part_3"
-#create_cv_data(df, msa_type)
-train_raxml_ng(df, msa_type)
-test_raxml_ng(df, msa_type)
+create_cv_data(df, msa_type)
+#train_raxml_ng(df, msa_type)
+#test_raxml_ng(df, msa_type)
 validate(df, msa_type)
