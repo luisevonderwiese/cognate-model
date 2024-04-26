@@ -5,6 +5,7 @@ from Bio.AlignIO.PhylipIO import RelaxedPhylipWriter
 import random
 import os
 import math
+from tabulate import tabulate
 
 def split_indices(num_sites, num_samples = 10, ratio = 0.6):
     num_sites_train = math.ceil(num_sites * ratio)
@@ -15,6 +16,7 @@ def split_indices(num_sites, num_samples = 10, ratio = 0.6):
         train_indices = l[:num_sites_train]
         res.append(train_indices)
     return res
+
 
 def empty_align(ref_align):
     new_records = [SeqRecord("", id=ref_align[i].id) for i in range(len(ref_align))]
@@ -45,7 +47,7 @@ def run_inference(msa_path, model, prefix, args = ""):
     command += " --msa " + msa_path
     command += " --model " + model
     command += " --prefix " + prefix
-    command += " --threads auto --seed 2 --force model_lh_impr"
+    command += " --threads auto --seed 2 --force model_lh_impr -blopt nr_safe"
     command += " " + args
     os.system(command)
 
@@ -87,8 +89,6 @@ def create_samples(kappa, msa_dir):
     prototype_msa_type = "prototype_part_" + str(kappa)
     bin_msa_path = os.path.join(msa_dir, bin_msa_type + ".phy")
     prototype_msa_path = os.path.join(msa_dir, prototype_msa_type + ".phy")
-    if not os.path.isfile(bin_msa_path) or not os.path.isfile(prototype_msa_path):
-        return
     with open(prototype_msa_path, "r") as msa_file:
         num_sites = int(msa_file.readlines()[0].split(" ")[2])
     with open(bin_msa_path, "r") as msa_file:
@@ -97,13 +97,13 @@ def create_samples(kappa, msa_dir):
     try:
         bin_align = AlignIO.read(bin_msa_path, "phylip-relaxed")
     except:
-        print(msa_dir)
-        return
+        print(msa_dir, "Failed")
+        return False
     try:
         prototype_align = AlignIO.read(bin_msa_path, "phylip-relaxed")
     except:
-        print(msa_dir)
-        return
+        print(msa_dir, "Failed")
+        return False
     indices_list = split_indices(num_sites)
     for (t, train_indices) in enumerate(indices_list):
         bin_train_align = empty_align(bin_align)
@@ -130,6 +130,7 @@ def create_samples(kappa, msa_dir):
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(prototype_test_align)
     print(msa_dir, "done")
+    return True
 
 
 def train_raxml_ng(msa_dir, target_dir, kappa):
@@ -138,12 +139,12 @@ def train_raxml_ng(msa_dir, target_dir, kappa):
     x = int(math.pow(2, kappa))
     for t in range(10):
         bin_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy")
-        bin_prefix = os.path.join(target_dir, bin_msa_type + "_cv_train_BIN")
+        bin_prefix = os.path.join(target_dir, bin_msa_type + "_cv_train_" + str(t) + "_BIN")
         run_inference(bin_msa_path, "BIN", bin_prefix)
         prototype_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy")
-        prototype_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_COG")
+        prototype_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_COG")
         run_inference(prototype_msa_path, "COG" + str(x), prototype_prefix)
-        gtr_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_COG")
+        gtr_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_GTR")
         run_inference(prototype_msa_path, "MULTI" + str(x - 1) + "_GTR", gtr_prefix)
 
 
@@ -152,41 +153,51 @@ def test_raxml_ng(msa_dir, target_dir, kappa):
     prototype_msa_type = "prototype_part_" + str(kappa)
     x = int(math.pow(2, kappa))
     for t in range(10):
-        bin_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy")
-        bin_prefix = os.path.join(target_dir, bin_msa_type + "_cv_train_BIN")
-        bin_test_prefix = os.path.join(target_dir, bin_msa_type + "_cv_test_BIN")
+        bin_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_test_" + str(t) + ".phy")
+        bin_prefix = os.path.join(target_dir, bin_msa_type + "_cv_train_" + str(t) + "_BIN")
+        bin_test_prefix = os.path.join(target_dir, bin_msa_type + "_cv_test_" + str(t) + "_BIN")
         run_evaluate(bin_msa_path, bin_test_prefix, bin_prefix)
-        prototype_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy")
-        prototype_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_COG")
-        prototype_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_test_COG")
+        prototype_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_test_" + str(t) + ".phy")
+        prototype_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_COG")
+        prototype_test_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_COG")
         run_evaluate(bin_msa_path, prototype_test_prefix, prototype_prefix)
-        gtr_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_GTR")
-        gtr_test_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_test_GTR")
+        gtr_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_GTR")
+        gtr_test_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_GTR")
         run_evaluate(bin_msa_path, gtr_test_prefix, gtr_prefix)
 
 
 def analysis(msa_dir, target_dir, kappa):
     results = [[] for _ in range(6)]
     for t in range(10):
-        results[0].append(final_llh(os.path.join(target_dir, bin_msa_type + "_cv_train_BIN")))
-        results[1].append(final_llh(os.path.join(target_dir, bin_msa_type + "_cv_test_BIN")))
-        results[2].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_train_COG")))
-        results[3].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_test_COG")))
-        results[4].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_train_GTR")))
-        results[5].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_test_GTR")))
+        results[0].append(final_llh(os.path.join(target_dir, bin_msa_type + "_cv_train_" + str(t) + "_BIN")))
+        results[1].append(final_llh(os.path.join(target_dir, bin_msa_type + "_cv_test_" + str(t) + "_BIN")))
+        results[2].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_COG")))
+        results[3].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_COG")))
+        results[4].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_GTR")))
+        results[5].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_GTR")))
     return [sum(el) / len(el) for el in results]
 
 
 
 msa_super_dir = "data/lingdata_cognate/msa"
 raxmlng_super_dir = "data/cross_validation"
-kappa = 3
+kappa = 5 
 random.seed(2)
+all_res = []
+headers = ("dataset", "train_BIN", "test_BIN", "train_COG", "test_COG", "train_GTR", "test_GTR")
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
     target_dir = os.path.join(raxmlng_super_dir, ds_name)
-    #create_samples(kappa, msa_dir)
+    bin_msa_type = "bin_part_" + str(kappa)
+    prototype_msa_type = "prototype_part_" + str(kappa)
+    bin_msa_path = os.path.join(msa_dir, bin_msa_type + ".phy")
+    prototype_msa_path = os.path.join(msa_dir, prototype_msa_type + ".phy")
+    if not os.path.isfile(bin_msa_path) or not os.path.isfile(prototype_msa_path):
+        continue
+    success = create_samples(kappa, msa_dir)
+    if not success:
+        continue
     train_raxml_ng(msa_dir, target_dir, kappa)
     test_raxml_ng(msa_dir, target_dir, kappa)
-    print(analysis((msa_dir, target_dir, kappa)))
-    break
+    all_res.append([ds_name] + analysis(msa_dir, target_dir, kappa))
+print(tabulate(all_res, tablefmt="pipe", headers = headers))
