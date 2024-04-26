@@ -17,18 +17,17 @@ def split_indices(num_sites, num_samples = 10, ratio = 0.6):
     return res
 
 def empty_align(ref_align):
-    new_records = [SeqRecord([]), id=ref_align[i].id) for i in range(len(ref_align))]
+    new_records = [SeqRecord("", id=ref_align[i].id) for i in range(len(ref_align))]
     return MultipleSeqAlignment(new_records, annotations={}, column_annotations={})
 
 def concat_align(a1, a2):
     new_sequences = []
     assert(len(a1) == len(a2))
     for i in range(len(a1)):
-        assert(a1[i].id == a2[i].id)
         seq1 = a1[i].seq
         seq2 = a2[i].seq
         new_sequences.append(seq1 + seq2)
-    new_records = [SeqRecord([new_sequences[i]]), id=a1[i].id) for i in range(len(a1))]
+    new_records = [SeqRecord(new_sequences[i], id=a1[i].id) for i in range(len(a1))]
     return MultipleSeqAlignment(new_records, annotations={}, column_annotations={})
 
 
@@ -64,11 +63,11 @@ def create_samples(kappa, msa_dir):
         prototype_test_align = empty_align(prototype_align)
         for s in range(num_sites):
             if s in train_indices :
-                prototype_train_align = concat_align(prototype_train_align, prototype_align[:, s])
-                bin_train_align += concat_align(bin_train_align, bin_align[:, s*kappa : (s+1) * kappa])
+                prototype_train_align = concat_align(prototype_train_align, prototype_align[:, s:s+1])
+                bin_train_align = concat_align(bin_train_align, bin_align[:, s*kappa : (s+1) * kappa])
             else:
-                prototype_test_align = bin_train_align(prototype_test_align, prototype_align[:, s])
-                bin_test_align += bin_train_align(bin_test_align, bin_align[:, s*kappa : (s+1) * kappa])
+                prototype_test_align = concat_align(prototype_test_align, prototype_align[:, s:s+1])
+                bin_test_align = concat_align(bin_test_align, bin_align[:, s*kappa : (s+1) * kappa])
         with open(os.path.join(msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy"),"w+") as f:
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(bin_train_align)
@@ -81,11 +80,13 @@ def create_samples(kappa, msa_dir):
         with open(os.path.join(msa_dir, prototype_msa_type + "_cv_test_" + str(t) + ".phy"),"w+") as f:
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(prototype_test_align)
+    print(msa_dir, "done")
 
 
 
 msa_super_dir = "data/lingdata_cognate/msa"
 kappa = 3
+random.seed(2)
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
     create_samples(kappa, msa_dir)
