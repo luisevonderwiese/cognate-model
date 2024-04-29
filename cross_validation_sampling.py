@@ -8,6 +8,7 @@ import math
 import numpy as np
 from tabulate import tabulate
 import matplotlib.pyplot as plt
+import matplotlib
 
 def split_indices(num_sites, num_samples = 10, ratio = 0.6):
     num_sites_train = math.ceil(num_sites * ratio)
@@ -84,6 +85,11 @@ def final_llh(prefix):
         if line.startswith("Final LogLikelihood: "):
             return float(line.split(": ")[1])
     return float('nan')
+
+def relative_llh(msa_path, prefix):
+    with open(msa_path, "r") as msa_file:
+        num_sites = int(msa_file.readlines()[0].split(" ")[2])
+    return final_llh(prefix) / num_sites
 
 
 def create_samples(kappa, msa_dir):
@@ -168,49 +174,72 @@ def test_raxml_ng(msa_dir, target_dir, kappa):
         run_evaluate(bin_msa_path, gtr_test_prefix, gtr_prefix)
 
 
-def analysis(target_dir, kappa):
+def analysis(msa_dir, target_dir, kappa):
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     results = [[] for _ in range(6)]
     for t in range(10):
         for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type)]):
-            results[m * 2].append(final_llh(os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)))
-            results[m * 2 + 1].append(final_llh(os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" +  model )))
+            train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
+            train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
+            results[m * 2].append(relative_llh(train_msa_path, train_prefix))
+            test_msa_path = os.path.join(msa_dir, msa_type + "_cv_test_" + str(t) + ".phy")
+            test_prefix = os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)
+            results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix)
     return [sum(el) / len(el) for el in results]
 
 
-def differences_analysis(target_dir, kappa):
+def differences_analysis(msa_dir, target_dir, kappa):
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     results = [[] for _ in range(3)]
     for t in range(10):
         for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type)]):
-            results[m].append(final_llh(os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)) - \
-            final_llh(os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)))
+            train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
+            train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
+            test_msa_path = os.path.join(msa_dir, msa_type + "_cv_test_" + str(t) + ".phy")
+            test_prefix = os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)
+            results[m].append(relative_llh(train_msa_path, train_prefix) - relative_llh(test_msa_path, test_prefix))
     return [sum(el) / len(el) for el in results]
 
 
-def plots(target_dir, kappa, plots_super_dir, ds_name):
+def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     ind = np.arange(10)
-    width = 0.35
-    for (model, msa_type) in [("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type)]:
-        plots_dir = os.path.join(plots_super_dir, model)
-        if not os.path.isdir(plots_dir):
-            os.makedirs(plots_dir)
-        train_llhs = [final_llh(os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)) for t in range(10)]
-        test_llhs = [final_llh(os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)) for t in range(10)]
-        fig, ax = plt.subplots()
-        rects1 = ax.bar(ind - width/2, train_llhs, width, label='train')
-        rects2 = ax.bar(ind + width/2, test_llhs, width, label='test')
-        ax.set_ylabel('final llh')
-        ax.set_xticks(ind)
-        ax.set_xticklabels(range(10))
-        ax.legend()
-        plt.savefig(os.path.join(plots_dir, ds_name  + ".png"))
-        plt.clf()
-        plt.close()
+    width = 1.0
+    offsets = [-(5*width) / 12, - width / 4, - width / 12, width / 12, width / 4, (5*width) / 12]
+    cmap_train = matplotlib.cm.get_cmap('Set1')
+    cmap_test = matplotlib.cm.get_cmap('Pastel1')
+    bin_msa_type = "bin_part_" + str(kappa)
+    prototype_msa_type = "prototype_part_" + str(kappa)
+    results = [[] for _ in range(6)]
+    plots_dir = os.path.join(plots_super_dir, kappa)
+    if not os.path.isdir(plots_dir):
+        os.makedirs(plots_dir)
+    for t in range(10):
+        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type)]):
+            train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
+            train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
+            results[m * 2].append(relative_llh(train_msa_path, train_prefix))
+            test_msa_path = os.path.join(msa_dir, msa_type + "_cv_test_" + str(t) + ".phy")
+            test_prefix = os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)
+            results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix)
+            test_llhs.append(relative_llh(test_msa_path, test_prefix)
+    fig, ax = plt.subplots()
+    ax.bar(ind + offsets[0], results[0], width, label='train BIN', color = cmap_train[0])
+    ax.bar(ind + offsets[1], results[1], width, label='test BIN', color = cmap_test[0])
+    ax.bar(ind + offsets[2], results[2], width, label='train COG', color = cmap_train[1])
+    ax.bar(ind + offsets[3], results[3], width, label='test COG', color = cmap_test[1])
+    ax.bar(ind + offsets[4], results[4], width, label='train GTR', color = cmap_train[2])
+    ax.bar(ind + offsets[5], results[5], width, label='test GTR', color = cmap_test[2])
+    ax.set_ylabel('relative llh')
+    ax.set_xticks(ind)
+    ax.set_xticklabels(range(10))
+    ax.legend()
+    plt.savefig(os.path.join(plots_dir, ds_name  + ".png"))
+    plt.clf()
+    plt.close()
 
 
 
@@ -240,8 +269,8 @@ for ds_name in os.listdir(msa_super_dir):
         continue
     #train_raxml_ng(msa_dir, target_dir, kappa)
     #test_raxml_ng(msa_dir, target_dir, kappa)
-    all_res.append([ds_name] + analysis(target_dir, kappa))
-    all_diff_res.append([ds_name] + differences_analysis(target_dir, kappa))
-    plots(target_dir, kappa, plots_super_dir, ds_name)
+    all_res.append([ds_name] + analysis((msa_dir, target_dir, kappa))
+    all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir, kappa))
+    plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name)
 print(tabulate(all_res, tablefmt="pipe", headers = headers))
 print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))
