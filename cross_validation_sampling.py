@@ -6,6 +6,7 @@ import random
 import os
 import math
 from tabulate import tabulate
+import matplotlib.pyplot as plt
 
 def split_indices(num_sites, num_samples = 10, ratio = 0.6):
     num_sites_train = math.ceil(num_sites * ratio)
@@ -166,25 +167,69 @@ def test_raxml_ng(msa_dir, target_dir, kappa):
         run_evaluate(bin_msa_path, gtr_test_prefix, gtr_prefix)
 
 
-def analysis(msa_dir, target_dir, kappa):
+def analysis(target_dir):
     results = [[] for _ in range(6)]
     for t in range(10):
-        results[0].append(final_llh(os.path.join(target_dir, bin_msa_type + "_cv_train_" + str(t) + "_BIN")))
-        results[1].append(final_llh(os.path.join(target_dir, bin_msa_type + "_cv_test_" + str(t) + "_BIN")))
-        results[2].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_COG")))
-        results[3].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_COG")))
-        results[4].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_GTR")))
-        results[5].append(final_llh(os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_GTR")))
+        for m, model in enumerate(["BIN", "COG", "GTR"]):
+        results[m * 2].append(final_llh(os.path.join(target_dir, bin_msa_type + "_cv_train_" + str(t) + "_" + model)))
+        results[m * 2 + 1].append(final_llh(os.path.join(target_dir, bin_msa_type + "_cv_test_" + str(t) + "_" +  model )))
     return [sum(el) / len(el) for el in results]
+
+
+def differences_analysis(target_dir):
+    results = [[] for _ in range(3)]
+    for t in range(10):
+        for m, model in enumerate(["BIN", "COG", "GTR"]):
+            results[m].append(final_llh(os.path.join(target_dir, bin_msa_type + "_cv_train_" + str(t) + "_" + model)) - \
+            final_llh(os.path.join(target_dir, bin_msa_type + "_cv_test_" + str(t) + "_" + model)))
+    return [sum(el) / len(el) for el in results]
+
+
+def plots(target_dir, plots_super_dir, ds_name):
+    ind = np.arange(10)
+    width = 0.35
+    for model in ["BIN", "COG", "GTR"]:
+        plots_dir = os.path.join(plots_super_dir, model)
+        if not os.path.isdir(plots_dir):
+            os.makedirs(plots_dir)
+        train_llhs = [final_llh(os.path.join(target_dir, bin_msa_type + "_cv_train_" + str(t) + "_" + model)) for t in range(10)]
+        test_llhs = [final_llh(os.path.join(target_dir, bin_msa_type + "_cv_test_" + str(t) + "_" + model)) for t in range(10)]
+        fig, ax = plt.subplots()
+        rects1 = ax.bar(ind - width/2, train_llhs, width, label='train')
+        rects2 = ax.bar(ind + width/2, test_llhs, width, label='test')
+        ax.set_ylabel('final llh')
+        ax.set_xticks(ind)
+        ax.set_xticklabels(range(10))
+        ax.legend()
+        plt.save_fig(os.path.join(plots_dir, ds_name  + ".png"))
+        plt.clf()
+        plt.close()
+    return [sum(el) / len(el) for el in results]
+
+
+ind = np.arange(len(men_means))  # the x locations for the groups
+width = 0.35  # the width of the bars
+
+
+rects1 = ax.bar(ind - width/2, men_means, width, yerr=men_std,
+                label='Men')
+rects2 = ax.bar(ind + width/2, women_means, width, yerr=women_std,
+                label='Women')
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+
 
 
 
 msa_super_dir = "data/lingdata_cognate/msa"
 raxmlng_super_dir = "data/cross_validation"
-kappa = 5 
+plots_super_dir = "data/cross_validation_plots"
+kappa = 5
 random.seed(2)
 all_res = []
+all_diff_res = []
 headers = ("dataset", "train_BIN", "test_BIN", "train_COG", "test_COG", "train_GTR", "test_GTR")
+diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_GTR")
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
     target_dir = os.path.join(raxmlng_super_dir, ds_name)
@@ -199,5 +244,8 @@ for ds_name in os.listdir(msa_super_dir):
         continue
     train_raxml_ng(msa_dir, target_dir, kappa)
     test_raxml_ng(msa_dir, target_dir, kappa)
-    all_res.append([ds_name] + analysis(msa_dir, target_dir, kappa))
+    all_res.append([ds_name] + analysis(target_dir))
+    all_diff_res.append([ds_name] + differences_analysis(target_dir))
+    plots(target_dir, plots_super_dir, ds_name)
 print(tabulate(all_res, tablefmt="pipe", headers = headers))
+print(tabulate(all_diff_res, tablefmt="pipe", headers = headers))
