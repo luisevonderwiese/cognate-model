@@ -90,17 +90,28 @@ def AIC_analysis(target_dir, kappa):
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
-        prefix = os.path.join(target_dir, msa_type + "_" + model)
+        prefix = os.path.join(target_dir, msa_type + "_cv_train_0_" + model)
         results.append(AIC(prefix))
+    return results
+
+def llh_analysis(target_dir, kappa):
+    results = []
+    bin_msa_type = "bin_part_" + str(kappa)
+    prototype_msa_type = "prototype_part_" + str(kappa)
+    for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
+        prefix = os.path.join(target_dir, msa_type + "_cv_train_0_" +  model)
+        results.append(final_llh(prefix))
     return results
 
 
 msa_super_dir = "data/lingdata_cognate/msa"
-raxmlng_super_dir = "data/inferences"
+raxmlng_super_dir = "data/cross_validation"
 kappa = 3
 random.seed(2)
-all_res = []
+AIC_res = []
+llh_res = []
 AIC_headers = ("dataset", "AIC BIN", "AIC COG", "AIC GTR", "AIC MK")
+llh_headers = ("dataset", "llh BIN", "llh COG", "llh GTR", "llh MK")
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
     target_dir = os.path.join(raxmlng_super_dir, ds_name)
@@ -110,6 +121,10 @@ for ds_name in os.listdir(msa_super_dir):
     prototype_msa_path = os.path.join(msa_dir, prototype_msa_type + ".phy")
     if not os.path.isfile(bin_msa_path) or not os.path.isfile(prototype_msa_path):
         continue
-    run_raxml_ng(msa_dir, target_dir, kappa)
-    all_res.append([ds_name] + AIC_analysis(target_dir, kappa))
-print(tabulate(all__res, tablefmt="pipe", AIC_headers = diff_headers))
+    #run_raxml_ng(msa_dir, target_dir, kappa)
+    AIC_res.append([ds_name] + AIC_analysis(target_dir, kappa))
+    llh_res.append([ds_name] + llh_analysis(target_dir, kappa))
+
+print(tabulate(AIC_res, tablefmt="pipe", headers = AIC_headers))
+print(tabulate(llh_res, tablefmt="pipe", headers = llh_headers))
+

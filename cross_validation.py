@@ -262,7 +262,7 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
 msa_super_dir = "data/lingdata_cognate/msa"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
-kappa = 5 
+kappa = 3 
 random.seed(2)
 all_res = []
 all_diff_res = []
@@ -280,8 +280,8 @@ for ds_name in os.listdir(msa_super_dir):
     success = create_samples(kappa, msa_dir)
     if not success:
         continue
-    train_raxml_ng(msa_dir, target_dir, kappa)
-    test_raxml_ng(msa_dir, target_dir, kappa)
+    #train_raxml_ng(msa_dir, target_dir, kappa)
+    #test_raxml_ng(msa_dir, target_dir, kappa)
     all_res.append([ds_name] + analysis(msa_dir, target_dir, kappa))
     all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir, kappa))
     plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name)
