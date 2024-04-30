@@ -86,11 +86,13 @@ def final_llh(prefix):
             return float(line.split(": ")[1])
     return float('nan')
 
-def relative_llh(msa_path, prefix):
+def relative_llh(msa_path, prefix, kappa, model):
     with open(msa_path, "r") as msa_file:
         num_sites = int(msa_file.readlines()[0].split(" ")[2])
+    if model == "BIN":
+        num_sites = int(num_sites / kappa)
     return final_llh(prefix) / num_sites
-
+    #return final_llh(prefix)
 
 def create_samples(kappa, msa_dir):
     bin_msa_type = "bin_part_" + str(kappa)
@@ -154,6 +156,9 @@ def train_raxml_ng(msa_dir, target_dir, kappa):
         run_inference(prototype_msa_path, "COG" + str(x), prototype_prefix)
         gtr_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_GTR")
         run_inference(prototype_msa_path, "MULTI" + str(x - 1) + "_GTR", gtr_prefix)
+        mk_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_MK")
+        run_inference(prototype_msa_path, "MULTI" + str(x - 1) + "_MK", mk_prefix)
+
 
 
 def test_raxml_ng(msa_dir, target_dir, kappa):
@@ -168,38 +173,45 @@ def test_raxml_ng(msa_dir, target_dir, kappa):
         prototype_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_test_" + str(t) + ".phy")
         prototype_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_COG")
         prototype_test_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_COG")
-        run_evaluate(bin_msa_path, prototype_test_prefix, prototype_prefix)
+        run_evaluate(prototype_msa_path, prototype_test_prefix, prototype_prefix)
         gtr_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_GTR")
         gtr_test_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_GTR")
-        run_evaluate(bin_msa_path, gtr_test_prefix, gtr_prefix)
+        run_evaluate(prototype_msa_path, gtr_test_prefix, gtr_prefix)
+        mk_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_MK")
+        mk_test_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_MK")
+        run_evaluate(prototype_msa_path, mk_test_prefix, mk_prefix)
+
 
 
 def analysis(msa_dir, target_dir, kappa):
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
-    results = [[] for _ in range(6)]
+    results = [[] for _ in range(8)]
     for t in range(10):
-        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type)]):
+        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
             train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
-            results[m * 2].append(relative_llh(train_msa_path, train_prefix))
+            results[m * 2].append(relative_llh(train_msa_path, train_prefix, kappa, model))
             test_msa_path = os.path.join(msa_dir, msa_type + "_cv_test_" + str(t) + ".phy")
             test_prefix = os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)
-            results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix)
+            results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix, kappa, model))
     return [sum(el) / len(el) for el in results]
 
 
 def differences_analysis(msa_dir, target_dir, kappa):
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
-    results = [[] for _ in range(3)]
+    results = [[] for _ in range(4)]
     for t in range(10):
-        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type)]):
+        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
             train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
+            rel_train_llh = relative_llh(train_msa_path, train_prefix, kappa, model)
             test_msa_path = os.path.join(msa_dir, msa_type + "_cv_test_" + str(t) + ".phy")
             test_prefix = os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)
-            results[m].append(relative_llh(train_msa_path, train_prefix) - relative_llh(test_msa_path, test_prefix))
+            rel_test_llh = relative_llh(test_msa_path, test_prefix, kappa, model)
+            results[m].append((rel_train_llh - rel_test_llh) / rel_train_llh)
+            #results[m].append(rel_train_llh - rel_test_llh)
     return [sum(el) / len(el) for el in results]
 
 
@@ -207,32 +219,33 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     ind = np.arange(10)
-    width = 1.0
-    offsets = [-(5*width) / 12, - width / 4, - width / 12, width / 12, width / 4, (5*width) / 12]
+    width = 0.1
+    offsets = [-0.35, -0.25, -0.15, -0.05, 0.05, 0.15, 0.25, 0.35]
     cmap_train = matplotlib.cm.get_cmap('Set1')
     cmap_test = matplotlib.cm.get_cmap('Pastel1')
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
-    results = [[] for _ in range(6)]
-    plots_dir = os.path.join(plots_super_dir, kappa)
+    results = [[] for _ in range(8)]
+    plots_dir = os.path.join(plots_super_dir, str(kappa))
     if not os.path.isdir(plots_dir):
         os.makedirs(plots_dir)
     for t in range(10):
-        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type)]):
+        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
             train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
-            results[m * 2].append(relative_llh(train_msa_path, train_prefix))
+            results[m * 2].append(relative_llh(train_msa_path, train_prefix, kappa, model))
             test_msa_path = os.path.join(msa_dir, msa_type + "_cv_test_" + str(t) + ".phy")
             test_prefix = os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)
-            results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix)
-            test_llhs.append(relative_llh(test_msa_path, test_prefix)
+            results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix, kappa, model))
     fig, ax = plt.subplots()
-    ax.bar(ind + offsets[0], results[0], width, label='train BIN', color = cmap_train[0])
-    ax.bar(ind + offsets[1], results[1], width, label='test BIN', color = cmap_test[0])
-    ax.bar(ind + offsets[2], results[2], width, label='train COG', color = cmap_train[1])
-    ax.bar(ind + offsets[3], results[3], width, label='test COG', color = cmap_test[1])
-    ax.bar(ind + offsets[4], results[4], width, label='train GTR', color = cmap_train[2])
-    ax.bar(ind + offsets[5], results[5], width, label='test GTR', color = cmap_test[2])
+    ax.bar(ind + offsets[0], results[0], width, label='train BIN', color = cmap_train(0))
+    ax.bar(ind + offsets[1], results[1], width, label='test BIN', color = cmap_test(0))
+    ax.bar(ind + offsets[2], results[2], width, label='train COG', color = cmap_train(1))
+    ax.bar(ind + offsets[3], results[3], width, label='test COG', color = cmap_test(1))
+    ax.bar(ind + offsets[4], results[4], width, label='train GTR', color = cmap_train(2))
+    ax.bar(ind + offsets[5], results[5], width, label='test GTR', color = cmap_test(2))
+    ax.bar(ind + offsets[6], results[6], width, label='train GTR', color = cmap_train(3))
+    ax.bar(ind + offsets[7], results[7], width, label='test GTR', color = cmap_test(3))
     ax.set_ylabel('relative llh')
     ax.set_xticks(ind)
     ax.set_xticklabels(range(10))
@@ -249,12 +262,12 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
 msa_super_dir = "data/lingdata_cognate/msa"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
-kappa = 3
+kappa = 5 
 random.seed(2)
 all_res = []
 all_diff_res = []
-headers = ("dataset", "train_BIN", "test_BIN", "train_COG", "test_COG", "train_GTR", "test_GTR")
-diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_GTR")
+headers = ("dataset", "train_BIN", "test_BIN", "train_COG", "test_COG", "train_GTR", "test_GTR", "train_MK", "test_MK")
+diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_GTR", "diff_MK")
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
     target_dir = os.path.join(raxmlng_super_dir, ds_name)
@@ -267,9 +280,9 @@ for ds_name in os.listdir(msa_super_dir):
     success = create_samples(kappa, msa_dir)
     if not success:
         continue
-    #train_raxml_ng(msa_dir, target_dir, kappa)
-    #test_raxml_ng(msa_dir, target_dir, kappa)
-    all_res.append([ds_name] + analysis((msa_dir, target_dir, kappa))
+    train_raxml_ng(msa_dir, target_dir, kappa)
+    test_raxml_ng(msa_dir, target_dir, kappa)
+    all_res.append([ds_name] + analysis(msa_dir, target_dir, kappa))
     all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir, kappa))
     plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name)
 print(tabulate(all_res, tablefmt="pipe", headers = headers))
