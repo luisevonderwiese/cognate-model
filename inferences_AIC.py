@@ -53,7 +53,7 @@ def relative_llh(msa_path, prefix, kappa, model):
 def AIC(prefix):
     logpath = prefix + ".raxml.log"
     if not os.path.isfile(logpath):
-        return [float('nan'), float('nan'), float('nan')]
+        return float('nan')
     with open(logpath, "r") as logfile:
         lines = logfile.readlines()
     for line in lines:
@@ -85,36 +85,60 @@ def run_raxml_ng(msa_dir, target_dir, kappa):
 
 
 
-def AIC_analysis(target_dir, kappa):
+def AIC_analysis(target_dir, kappa, cv = False):
     results = []
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
-        prefix = os.path.join(target_dir, msa_type + "_cv_train_0_" + model)
+        if cv:
+            prefix = os.path.join(target_dir, msa_type + "_cv_train_0_" + model)
+        else:
+            prefix = os.path.join(target_dir, msa_type + "_" + model)
         results.append(AIC(prefix))
     return results
 
-def llh_analysis(target_dir, kappa):
+def llh_analysis(target_dir, kappa, cv = False):
     results = []
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
-        prefix = os.path.join(target_dir, msa_type + "_cv_train_0_" +  model)
+        if cv:
+            prefix = os.path.join(target_dir, msa_type + "_cv_train_0_" +  model)
+        else:
+            prefix = os.path.join(target_dir, msa_type + "_" +  model)
         results.append(final_llh(prefix))
     return results
 
+def violin_plots(AIC_results, path):
+    results_transformed = [[] for _ in range(4)]
+    for row in AIC_results:
+        for i in range(1, 5):
+            results_transformed[i-1].append(row[i])
+    fig, ax = plt.figure()
+    ax.violinplot(results_transformed)
+    plt.savefig(path)
+    plt.clf()
+    plt.close()
+
+
 
 msa_super_dir = "data/lingdata_cognate/msa"
-raxmlng_super_dir = "data/cross_validation"
+raxmlng_super_dir = "data/inferences"
+cv_super_dir = "data/cross_validation"
+plots_super_dir = "data/AIC_plots"
+if not os.path.isdir(plots_super_dir):
+    os.makedirs(plots_super_dir)
 kappa = 3
 random.seed(2)
 AIC_res = []
+AIC_cv_res = []
 llh_res = []
 AIC_headers = ("dataset", "AIC BIN", "AIC COG", "AIC GTR", "AIC MK")
 llh_headers = ("dataset", "llh BIN", "llh COG", "llh GTR", "llh MK")
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
     target_dir = os.path.join(raxmlng_super_dir, ds_name)
+    cv_target_dir = os.path.join(cv_super_dir, ds_name)
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     bin_msa_path = os.path.join(msa_dir, bin_msa_type + ".phy")
@@ -123,8 +147,9 @@ for ds_name in os.listdir(msa_super_dir):
         continue
     #run_raxml_ng(msa_dir, target_dir, kappa)
     AIC_res.append([ds_name] + AIC_analysis(target_dir, kappa))
-    llh_res.append([ds_name] + llh_analysis(target_dir, kappa))
-
+    AIC_cv_res.append([ds_name] + AIC_analysis(cv_target_dir, kappa, true))
+    #llh_res.append([ds_name] + llh_analysis(target_dir, kappa))
+violin_plots(AIC_res, os.path.join(plots_super_dir, str(kappa) + "_all.png"))
+violin_plots(AIC_cv_res, os.path.join(plots_super_dir, str(kappa) + "_cv.png"))
 print(tabulate(AIC_res, tablefmt="pipe", headers = AIC_headers))
-print(tabulate(llh_res, tablefmt="pipe", headers = llh_headers))
-
+print(tabulate(AIC_cv_res, tablefmt="pipe", headers = AIC_headers))
