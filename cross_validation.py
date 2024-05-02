@@ -9,6 +9,8 @@ import numpy as np
 from tabulate import tabulate
 import matplotlib.pyplot as plt
 import matplotlib
+import seaborn
+import pandas as pd
 
 def split_indices(num_sites, num_samples = 10, ratio = 0.6):
     num_sites_train = math.ceil(num_sites * ratio)
@@ -101,6 +103,8 @@ def create_samples(kappa, msa_dir):
     prototype_msa_path = os.path.join(msa_dir, prototype_msa_type + ".phy")
     with open(prototype_msa_path, "r") as msa_file:
         num_sites = int(msa_file.readlines()[0].split(" ")[2])
+    if num_sites < 10:
+        return False
     with open(bin_msa_path, "r") as msa_file:
         num_sites_bin = int(msa_file.readlines()[0].split(" ")[2])
     assert(num_sites_bin == kappa * num_sites)
@@ -151,7 +155,7 @@ def train_raxml_ng(msa_dir, target_dir, kappa):
         bin_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy")
         bin_prefix = os.path.join(target_dir, bin_msa_type + "_cv_train_" + str(t) + "_BIN")
         run_inference(bin_msa_path, "BIN", bin_prefix)
-        prototype_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy")
+        prototype_msa_path = os.path.join(msa_dir, prototype_msa_type + "_cv_train_" + str(t) + ".phy")
         prototype_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_COG")
         run_inference(prototype_msa_path, "COG" + str(x), prototype_prefix)
         gtr_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_GTR")
@@ -210,7 +214,7 @@ def differences_analysis(msa_dir, target_dir, kappa):
             test_msa_path = os.path.join(msa_dir, msa_type + "_cv_test_" + str(t) + ".phy")
             test_prefix = os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)
             rel_test_llh = relative_llh(test_msa_path, test_prefix, kappa, model)
-            results[m].append((rel_train_llh - rel_test_llh) / rel_train_llh)
+            results[m].append((rel_test_llh - rel_train_llh) / rel_train_llh)
             #results[m].append(rel_train_llh - rel_test_llh)
     return [sum(el) / len(el) for el in results]
 
@@ -256,17 +260,27 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
 
 
 
-
+def violin_plots(results, path):
+    models = ["BIN", "COG", "GTR", "MK"]
+    results_transformed = [[] for _ in range(4)]
+    for row in results:
+        if row[1] != row[1]:
+            continue
+        for i in range(1, 5):
+            results_transformed[i-1].append(row[i])
+    ax = seaborn.violinplot(data = results_transformed)
+    ax.set_xticklabels(models)
+    plt.savefig(path + "_violin.png")
+    plt.clf()
+    plt.close()
 
 
 msa_super_dir = "data/lingdata_cognate/msa"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
-kappa = 3 
+kappa = 5 
 random.seed(2)
-all_res = []
 all_diff_res = []
-headers = ("dataset", "train_BIN", "test_BIN", "train_COG", "test_COG", "train_GTR", "test_GTR", "train_MK", "test_MK")
 diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_GTR", "diff_MK")
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
@@ -280,10 +294,9 @@ for ds_name in os.listdir(msa_super_dir):
     success = create_samples(kappa, msa_dir)
     if not success:
         continue
-    #train_raxml_ng(msa_dir, target_dir, kappa)
-    #test_raxml_ng(msa_dir, target_dir, kappa)
-    all_res.append([ds_name] + analysis(msa_dir, target_dir, kappa))
+    train_raxml_ng(msa_dir, target_dir, kappa)
+    test_raxml_ng(msa_dir, target_dir, kappa)
     all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir, kappa))
-    plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name)
-print(tabulate(all_res, tablefmt="pipe", headers = headers))
+    #plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name)
+violin_plots(all_diff_res, os.path.join(plots_super_dir, str(kappa)))
 print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))

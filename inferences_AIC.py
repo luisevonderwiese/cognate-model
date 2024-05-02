@@ -9,7 +9,7 @@ import numpy as np
 from tabulate import tabulate
 import matplotlib.pyplot as plt
 import matplotlib
-
+import seaborn
 
 
 
@@ -91,59 +91,37 @@ def run_raxml_ng(msa_dir, target_dir, kappa):
 
 
 
-def AIC_analysis(target_dir, kappa, cv = False):
+def AIC_analysis(target_dir, kappa):
     results = []
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
-        if cv:
-            prefix = os.path.join(target_dir, msa_type + "_cv_train_0_" + model)
-        else:
-            prefix = os.path.join(target_dir, msa_type + "_" + model)
+        prefix = os.path.join(target_dir, msa_type + "_" + model)
         results.append(AIC(prefix))
     return results
 
-def llh_analysis(target_dir, kappa, cv = False):
+def llh_analysis(target_dir, kappa):
     results = []
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
-        if cv:
-            prefix = os.path.join(target_dir, msa_type + "_cv_train_0_" +  model)
-        else:
-            prefix = os.path.join(target_dir, msa_type + "_" +  model)
+        prefix = os.path.join(target_dir, msa_type + "_" +  model)
         results.append(final_llh(prefix))
     return results
 
-def violin_plots(AIC_results, path):
+def violin_plots(results, path):
+    models = ["BIN", "COG", "GTR", "MK"]
     results_transformed = [[] for _ in range(4)]
-    for row in AIC_results:
+    for row in results:
         if row[1] != row[1]:
             continue
         for i in range(1, 5):
             results_transformed[i-1].append(row[i])
-    fig, ax = plt.subplots()
-    ax.violinplot(results_transformed)
+    ax = seaborn.violinplot(data = results_transformed)
+    ax.set_xticklabels(models)
     plt.savefig(path + "_violin.png")
     plt.clf()
     plt.close()
-    for (i, model) in enumerate(["BIN", "COG", "GTR", "MK"]):
-        plt.scatter(range(len(results_transformed[i])), results_transformed[i], s = 8, label = model)
-    plt.legend()
-    plt.savefig(path + "_scatter.png")
-    plt.clf()
-    plt.close()
-
-def llh_diff(target_dir, kappa):
-    bin_msa_type = "bin_part_" + str(kappa)
-    prototype_msa_type = "prototype_part_" + str(kappa)
-    BIN_prefix = os.path.join(target_dir, bin_msa_type + "_BIN")
-    GTR_prefix = os.path.join(target_dir, prototype_msa_type + "_GTR")
-    return final_llh(BIN_prefix) - final_llh(GTR_prefix)
-
-
-
-
 
 msa_super_dir = "data/lingdata_cognate/msa"
 raxmlng_super_dir = "data/inferences"
@@ -151,14 +129,14 @@ cv_super_dir = "data/cross_validation"
 plots_super_dir = "data/AIC_plots"
 if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
-kappa = 5
+kappa = 4
 random.seed(2)
-#AIC_res = []
-#AIC_cv_res = []
+AIC_res = []
 #llh_res = []
-#AIC_headers = ("dataset", "AIC BIN", "AIC COG", "AIC GTR", "AIC MK")
+AIC_headers = ("dataset", "AIC BIN", "AIC COG", "AIC GTR", "AIC MK")
 #llh_headers = ("dataset", "llh BIN", "llh COG", "llh GTR", "llh MK")
-llh_diffs = []
+models = ("BIN", "MK", "GTR", "COG")
+llh_diffs = dict((model1, dict((model2, []) for model2 in models)) for model1 in models)
 ratios = []
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
@@ -170,19 +148,8 @@ for ds_name in os.listdir(msa_super_dir):
     prototype_msa_path = os.path.join(msa_dir, prototype_msa_type + ".phy")
     if not os.path.isfile(bin_msa_path) or not os.path.isfile(prototype_msa_path):
         continue
-    run_raxml_ng(msa_dir, target_dir, kappa)
-    llh_diffs.append(llh_diff, target_dir, kappa)
-    ratios.append(sites_taxa_ratio(prototype_msa_path))
-    #AIC_res.append([ds_name] + AIC_analysis(target_dir, kappa))
-    #AIC_cv_res.append([ds_name] + AIC_analysis(cv_target_dir, kappa, True))
+    #run_raxml_ng(msa_dir, target_dir, kappa)
+    AIC_res.append([ds_name] + AIC_analysis(target_dir, kappa))
     #llh_res.append([ds_name] + llh_analysis(target_dir, kappa))
-
-plt.scatter(ratios, llh_diffs)
-plt.savefig(os.path.join(plots_super_dir, "scatter_" + str(kappa) + ".png")
-plt.clf()
-plt.close()
-
-#violin_plots(AIC_res, os.path.join(plots_super_dir, str(kappa) + "_all.png"))
-#violin_plots(AIC_cv_res, os.path.join(plots_super_dir, str(kappa) + "_cv.png"))
-#print(tabulate(AIC_res, tablefmt="pipe", headers = AIC_headers))
-#print(tabulate(AIC_cv_res, tablefmt="pipe", headers = AIC_headers))
+violin_plots(AIC_res, os.path.join(plots_super_dir, str(kappa) + "_AIC"))
+print(tabulate(AIC_res, tablefmt="pipe", headers = AIC_headers))

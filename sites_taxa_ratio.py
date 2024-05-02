@@ -24,7 +24,7 @@ for i, row in df.iterrows():
 
 
 
-fig,ax = plt.subplots(figsize=(40, 30))
+fig,ax = plt.subplots(figsize=(15, 10))
 x = range(len(all_counts))
 y_old = [0 for el in x]
 for num in range(2, 7):
@@ -34,7 +34,14 @@ for num in range(2, 7):
     ax.bar(x, y_new, bottom=y_old, label = str(num))
     for i in x:
         y_old[i] = y_old[i] + y_new[i]
-ax.legend()
+box = ax.get_position()
+ax.set_position([box.x0, box.y0 + box.height * 0.1,
+      box.width, box.height * 0.9])
+
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+          fancybox=True, shadow=True, ncol=11)
+
+
 plt.savefig(os.path.join(plots_super_dir, "partition_sizes.png"))
 plt.clf()
 
