@@ -298,9 +298,9 @@ plots_super_dir = os.path.join("data", "plots")
 raxmlng_super_dir = os.path.join("data","inferences")
 if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
-kappa = 3 
+kappa = 4 
 
-#raxml_ng()
+raxml_ng()
 AIC_analysis()
 
 rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + ".png"), "sr")

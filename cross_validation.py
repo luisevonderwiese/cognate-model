@@ -39,7 +39,8 @@ def concat_align(a1, a2):
 
 
 
-def run_inference(msa_path, model, prefix, args = ""):
+def run_inference(msa_path, model, prefix, s = False):
+    args = ""
     if not os.path.isfile(msa_path):
         print("MSA " + msa_path + " does not exist")
         return
@@ -48,7 +49,10 @@ def run_inference(msa_path, model, prefix, args = ""):
         os.makedirs(prefix_dir)
     if not os.path.isfile(prefix + ".raxml.bestTree"):
         args = args + " --redo"
-    command = "./bin/raxml-ng-multiple-force"
+    if s:
+        command = "./bin/raxml-ng-single-noforce"
+    else:
+        command = "./bin/raxml-ng-multiple-force"
     command += " --msa " + msa_path
     command += " --model " + model
     command += " --prefix " + prefix
@@ -57,7 +61,8 @@ def run_inference(msa_path, model, prefix, args = ""):
     os.system(command)
 
 
-def run_evaluate(msa_path, prefix, ref_prefix, args = ""):
+def run_evaluate(msa_path, prefix, ref_prefix, s = False):
+    args = ""
     if not os.path.isfile(msa_path):
         print("MSA " + msa_path + " does not exist")
         return
@@ -68,7 +73,10 @@ def run_evaluate(msa_path, prefix, ref_prefix, args = ""):
         return
     with open(ref_prefix + ".raxml.bestModel", "r") as model_file:
         model =  model_file.readlines()[0].split(",")[0]
-    command = "./bin/raxml-ng-multiple-force --evaluate "
+    if s:
+        command = "./bin/raxml-ng-single-noforce --evaluate "
+    else:
+        command = "./bin/raxml-ng-multiple-force --evaluate "
     command += " --msa " + msa_path
     command += " --tree " + ref_prefix + ".raxml.bestTree"
     command += " --model " + model
@@ -158,6 +166,8 @@ def train_raxml_ng(msa_dir, target_dir, kappa):
         prototype_msa_path = os.path.join(msa_dir, prototype_msa_type + "_cv_train_" + str(t) + ".phy")
         prototype_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_COG")
         run_inference(prototype_msa_path, "COG" + str(x), prototype_prefix)
+        prototype_s_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_COGs")
+        run_inference(prototype_msa_path, "COG" + str(x), prototype_s_prefix, s = True)
         gtr_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_GTR")
         run_inference(prototype_msa_path, "MULTI" + str(x - 1) + "_GTR", gtr_prefix)
         mk_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_MK")
@@ -174,10 +184,13 @@ def test_raxml_ng(msa_dir, target_dir, kappa):
         bin_prefix = os.path.join(target_dir, bin_msa_type + "_cv_train_" + str(t) + "_BIN")
         bin_test_prefix = os.path.join(target_dir, bin_msa_type + "_cv_test_" + str(t) + "_BIN")
         run_evaluate(bin_msa_path, bin_test_prefix, bin_prefix)
-        prototype_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_test_" + str(t) + ".phy")
+        prototype_msa_path = os.path.join(msa_dir, prototype_msa_type + "_cv_test_" + str(t) + ".phy")
         prototype_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_COG")
         prototype_test_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_COG")
         run_evaluate(prototype_msa_path, prototype_test_prefix, prototype_prefix)
+        prototype_s_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_COGs")
+        prototype_s_test_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_COGs")
+        run_evaluate(prototype_msa_path, prototype_s_test_prefix, prototype_s_prefix, s = True)
         gtr_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_train_" + str(t) + "_GTR")
         gtr_test_prefix = os.path.join(target_dir, prototype_msa_type + "_cv_test_" + str(t) + "_GTR")
         run_evaluate(prototype_msa_path, gtr_test_prefix, gtr_prefix)
@@ -192,7 +205,7 @@ def analysis(msa_dir, target_dir, kappa):
     prototype_msa_type = "prototype_part_" + str(kappa)
     results = [[] for _ in range(8)]
     for t in range(10):
-        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
+        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("COGs", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
             train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
             results[m * 2].append(relative_llh(train_msa_path, train_prefix, kappa, model))
@@ -205,9 +218,9 @@ def analysis(msa_dir, target_dir, kappa):
 def differences_analysis(msa_dir, target_dir, kappa):
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
-    results = [[] for _ in range(4)]
+    results = [[] for _ in range(5)]
     for t in range(10):
-        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
+        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("COGs", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
             train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
             rel_train_llh = relative_llh(train_msa_path, train_prefix, kappa, model)
@@ -223,18 +236,18 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
     ind = np.arange(10)
-    width = 0.1
-    offsets = [-0.35, -0.25, -0.15, -0.05, 0.05, 0.15, 0.25, 0.35]
+    width = 0.08
+    offsets = [-0.36, -0.28, -0.20, -0.12, -0.04, 0.04, 0.12, 0.20, 0.28, 0.36]
     cmap_train = matplotlib.cm.get_cmap('Set1')
     cmap_test = matplotlib.cm.get_cmap('Pastel1')
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
-    results = [[] for _ in range(8)]
+    results = [[] for _ in range(10)]
     plots_dir = os.path.join(plots_super_dir, str(kappa))
     if not os.path.isdir(plots_dir):
         os.makedirs(plots_dir)
     for t in range(10):
-        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
+        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("COGs", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
             train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
             results[m * 2].append(relative_llh(train_msa_path, train_prefix, kappa, model))
@@ -248,11 +261,20 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
     ax.bar(ind + offsets[3], results[3], width, label='test COG', color = cmap_test(1))
     ax.bar(ind + offsets[4], results[4], width, label='train GTR', color = cmap_train(2))
     ax.bar(ind + offsets[5], results[5], width, label='test GTR', color = cmap_test(2))
-    ax.bar(ind + offsets[6], results[6], width, label='train GTR', color = cmap_train(3))
-    ax.bar(ind + offsets[7], results[7], width, label='test GTR', color = cmap_test(3))
+    ax.bar(ind + offsets[6], results[6], width, label='train MK', color = cmap_train(3))
+    ax.bar(ind + offsets[7], results[7], width, label='test MK', color = cmap_test(3))
+    ax.bar(ind + offsets[8], results[8], width, label='train MK', color = cmap_train(4))
+    ax.bar(ind + offsets[9], results[9], width, label='test MK', color = cmap_test(4))
+
     ax.set_ylabel('relative llh')
     ax.set_xticks(ind)
     ax.set_xticklabels(range(10))
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 + box.height * 0.1,
+      box.width, box.height * 0.9])
+
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+          fancybox=True, shadow=True, ncol=10)
     ax.legend()
     plt.savefig(os.path.join(plots_dir, ds_name  + ".png"))
     plt.clf()
@@ -261,12 +283,12 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
 
 
 def violin_plots(results, path):
-    models = ["BIN", "COG", "GTR", "MK"]
-    results_transformed = [[] for _ in range(4)]
+    models = ["BIN", "COG", "COGs", "GTR", "MK"]
+    results_transformed = [[] for _ in range(5)]
     for row in results:
         if row[1] != row[1]:
             continue
-        for i in range(1, 5):
+        for i in range(1, 6):
             results_transformed[i-1].append(row[i])
     ax = seaborn.violinplot(data = results_transformed)
     ax.set_xticklabels(models)
@@ -278,10 +300,10 @@ def violin_plots(results, path):
 msa_super_dir = "data/lingdata_cognate/msa"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
-kappa = 5 
+kappa = 5555555555555555555555555555555555555555555555555555555 
 random.seed(2)
 all_diff_res = []
-diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_GTR", "diff_MK")
+diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_COGs", "diff_GTR", "diff_MK")
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
     target_dir = os.path.join(raxmlng_super_dir, ds_name)
@@ -297,6 +319,6 @@ for ds_name in os.listdir(msa_super_dir):
     train_raxml_ng(msa_dir, target_dir, kappa)
     test_raxml_ng(msa_dir, target_dir, kappa)
     all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir, kappa))
-    #plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name)
+    plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name)
 violin_plots(all_diff_res, os.path.join(plots_super_dir, str(kappa)))
 print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))
