@@ -13,21 +13,24 @@ import seaborn
 
 
 
-def run_inference(msa_path, model, prefix, args = ""):
+def run_inference(msa_path, model, prefix, s = False):
     if not os.path.isfile(msa_path):
         print("MSA " + msa_path + " does not exist")
         return
     prefix_dir = "/".join(prefix.split("/")[:-1])
+    args = ""
     if not os.path.isdir(prefix_dir):
         os.makedirs(prefix_dir)
     if not os.path.isfile(prefix + ".raxml.bestTree"):
         args = args + " --redo"
-    command = "./bin/raxml-ng-multiple-force"
+    if s:
+        command = "./bin/raxml-ng-single-noforce"
+    else:
+        command = "./bin/raxml-ng-multiple-force"
     command += " --msa " + msa_path
     command += " --model " + model
     command += " --prefix " + prefix
     command += " --threads auto --seed 2 --force model_lh_impr -blopt nr_safe"
-    command += " " + args
     os.system(command)
 
 
@@ -144,6 +147,8 @@ def run_raxml_ng(msa_dir, target_dir, kappa):
     run_inference(bin_msa_path, "BIN", bin_prefix)
     prototype_prefix = os.path.join(target_dir, prototype_msa_type + "_COG")
     run_inference(prototype_msa_path, "COG" + str(x), prototype_prefix)
+    prototype_s_prefix = os.path.join(target_dir, prototype_msa_type + "_COGs")
+    run_inference(prototype_msa_path, "COG" + str(x), prototype_s_prefix, s = True)
     gtr_prefix = os.path.join(target_dir, prototype_msa_type + "_GTR")
     run_inference(prototype_msa_path, "MULTI" + str(x - 1) + "_GTR", gtr_prefix)
     mk_prefix = os.path.join(target_dir, prototype_msa_type + "_MK")
@@ -156,31 +161,40 @@ def AIC_scores(target_dir, kappa):
     results = []
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
-    for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
+    for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("COGs", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
         prefix = os.path.join(target_dir, msa_type + "_" + model)
         results.append(AIC(prefix))
     return results
 
 
 
-def get_all_substitution_rates(target_dir, kappa):
+def get_all_substitution_rates(raxmlng_super_dir, kappa, s = False):
     r = []
-    for ds_name in os.listdir(target_dir):
+    for ds_name in os.listdir(raxmlng_super_dir):
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
         prototype_msa_type = "prototype_part_" + str(kappa)
         prefix = os.path.join(target_dir, prototype_msa_type + "_COG")
-        f = substitution_rates(prefix, x)
+        if s:
+            prefix += "s"
+        if s:
+            x = -1
+        else:
+            x = int(math.pow(2, kappa))
+        f = substitution_rates(prefix, x) 
         #if len(f) == 0:
         #    continue
         r.append(f)
     return r
 
-def get_all_base_frequencies(target_dir, kappa):
+def get_all_base_frequencies(raxmlng_super_dir, kappa, s = False):
     r = []
-    for ds_name in os.listdir(target_dir):
+    for ds_name in os.listdir(raxmlng_super_dir):
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
         prototype_msa_type = "prototype_part_" + str(kappa)
         prefix = os.path.join(target_dir, prototype_msa_type + "_COG")
+        if s:
+            prefix += "s"
+        x = int(math.pow(2, kappa))
         f = base_frequencies(prefix, x)
         #if len(f) == 0:
         #    continue
@@ -189,16 +203,16 @@ def get_all_base_frequencies(target_dir, kappa):
 
 
 def violin_plots(results, path):
-    models = ["BIN", "COG", "GTR", "MK"]
-    results_transformed = [[] for _ in range(4)]
+    models = ["BIN", "COG", "COGs", "GTR", "MK"]
+    results_transformed = [[] for _ in range(5)]
     for row in results:
         if row[1] != row[1]:
             continue
-        for i in range(1, 5):
+        for i in range(1, 6):
             results_transformed[i-1].append(row[i])
     ax = seaborn.violinplot(data = results_transformed)
     ax.set_xticklabels(models)
-    plt.savefig(path + "_violin.png")
+    plt.savefig(path)
     plt.clf()
     plt.close()
 
@@ -249,14 +263,6 @@ def rates_stacked_plot(all_rates, path, plot_type):
     plt.clf()
     plt.close()
 
-msa_super_dir = "data/lingdata_cognate/msa"
-raxmlng_super_dir = "data/inferences"
-cv_super_dir = "data/cross_validation"
-plots_super_dir = "data/AIC_plots"
-if not os.path.isdir(plots_super_dir):
-    os.makedirs(plots_super_dir)
-kappa = 4
-models = ("BIN", "MK", "GTR", "COG")
 
 def raxml_ng():
     for ds_name in os.listdir(msa_super_dir):
@@ -281,14 +287,22 @@ def AIC_analysis():
         prototype_msa_path = os.path.join(msa_dir, prototype_msa_type + ".phy")
         if not os.path.isfile(bin_msa_path) or not os.path.isfile(prototype_msa_path):
             continue
-        AIC_res.append([ds_name] + AIC_analysis(target_dir, kappa))
-    #llh_res.append([ds_name] + llh_analysis(target_dir, kappa))
-    violin_plots(AIC_res, os.path.join(plots_super_dir, str(kappa) + "_AIC"))
-    print(tabulate(AIC_res, tablefmt="pipe", headers = ["dataset"] + models))
+        AIC_res.append([ds_name] + AIC_scores(target_dir, kappa))
+    violin_plots(AIC_res, os.path.join(plots_super_dir, "AIC_" + str(kappa) + ".png"))
+    print(tabulate(AIC_res, tablefmt="pipe", headers = ["dataset", "BIN", "COG", "COGs", "GTR", "MK"]))
 
 
-raxml_ng()
+version = "multiple-force"
+msa_super_dir = "data/lingdata_cognate/msa"
+plots_super_dir = os.path.join("data", "plots")
+raxmlng_super_dir = os.path.join("data","inferences")
+if not os.path.isdir(plots_super_dir):
+    os.makedirs(plots_super_dir)
+kappa = 3 
+
+#raxml_ng()
 AIC_analysis()
 
-rates_stacked_plot(get_all_substitution_rates(target_dir, kappa), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + ".png"), "sr")
-rates_stacked_plot(get_all_base_frequencies(target_dir, kappa), os.path.join(plots_super_dir, "base_frequencies_" + str(kappa) + ".png"), "bf")
+rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + ".png"), "sr")
+rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa, True), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + "_s.png"), "sr")
+rates_stacked_plot(get_all_base_frequencies(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "base_frequencies_" + str(kappa) + ".png"), "bf")
