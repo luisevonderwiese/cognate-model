@@ -66,6 +66,12 @@ def AIC(prefix):
     return float('nan')
 
 
+def sites_taxa_ratio(msa_path):
+    with open(msa_path, "r") as msa_file:
+        parts = msa_file.readlines()[0].split(" ")
+    return int(parts[2]) / int(parts[1])
+
+
 
 def run_raxml_ng(msa_dir, target_dir, kappa):
     bin_msa_type = "bin_part_" + str(kappa)
@@ -128,6 +134,15 @@ def violin_plots(AIC_results, path):
     plt.clf()
     plt.close()
 
+def llh_diff(target_dir, kappa):
+    bin_msa_type = "bin_part_" + str(kappa)
+    prototype_msa_type = "prototype_part_" + str(kappa)
+    BIN_prefix = os.path.join(target_dir, bin_msa_type + "_BIN")
+    GTR_prefix = os.path.join(target_dir, prototype_msa_type + "_GTR")
+    return final_llh(BIN_prefix) - final_llh(GTR_prefix)
+
+
+
 
 
 msa_super_dir = "data/lingdata_cognate/msa"
@@ -136,13 +151,15 @@ cv_super_dir = "data/cross_validation"
 plots_super_dir = "data/AIC_plots"
 if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
-kappa = 5 
+kappa = 5
 random.seed(2)
-AIC_res = []
-AIC_cv_res = []
-llh_res = []
-AIC_headers = ("dataset", "AIC BIN", "AIC COG", "AIC GTR", "AIC MK")
-llh_headers = ("dataset", "llh BIN", "llh COG", "llh GTR", "llh MK")
+#AIC_res = []
+#AIC_cv_res = []
+#llh_res = []
+#AIC_headers = ("dataset", "AIC BIN", "AIC COG", "AIC GTR", "AIC MK")
+#llh_headers = ("dataset", "llh BIN", "llh COG", "llh GTR", "llh MK")
+llh_diffs = []
+ratios = []
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
     target_dir = os.path.join(raxmlng_super_dir, ds_name)
@@ -154,10 +171,18 @@ for ds_name in os.listdir(msa_super_dir):
     if not os.path.isfile(bin_msa_path) or not os.path.isfile(prototype_msa_path):
         continue
     run_raxml_ng(msa_dir, target_dir, kappa)
-    AIC_res.append([ds_name] + AIC_analysis(target_dir, kappa))
-    AIC_cv_res.append([ds_name] + AIC_analysis(cv_target_dir, kappa, True))
+    llh_diffs.append(llh_diff, target_dir, kappa)
+    ratios.append(sites_taxa_ratio(prototype_msa_path))
+    #AIC_res.append([ds_name] + AIC_analysis(target_dir, kappa))
+    #AIC_cv_res.append([ds_name] + AIC_analysis(cv_target_dir, kappa, True))
     #llh_res.append([ds_name] + llh_analysis(target_dir, kappa))
-violin_plots(AIC_res, os.path.join(plots_super_dir, str(kappa) + "_all.png"))
-violin_plots(AIC_cv_res, os.path.join(plots_super_dir, str(kappa) + "_cv.png"))
-print(tabulate(AIC_res, tablefmt="pipe", headers = AIC_headers))
-print(tabulate(AIC_cv_res, tablefmt="pipe", headers = AIC_headers))
+
+plt.scatter(ratios, llh_diffs)
+plt.savefig(os.path.join(plots_super_dir, "scatter_" + str(kappa) + ".png")
+plt.clf()
+plt.close()
+
+#violin_plots(AIC_res, os.path.join(plots_super_dir, str(kappa) + "_all.png"))
+#violin_plots(AIC_cv_res, os.path.join(plots_super_dir, str(kappa) + "_cv.png"))
+#print(tabulate(AIC_res, tablefmt="pipe", headers = AIC_headers))
+#print(tabulate(AIC_cv_res, tablefmt="pipe", headers = AIC_headers))
