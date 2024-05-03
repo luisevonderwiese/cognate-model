@@ -35,7 +35,7 @@ for line in lines:
 
 max_num = max([len(counts) for dataset, counts in all_counts.items()])
 fig,ax = plt.subplots(figsize=(15, 10))
-x = range(len(all_counts))
+x = [dataset for dataset,counts in all_counts.items()]
 y_old = [0 for el in x]
 for num in range(max_num):
     y_new = []
@@ -45,14 +45,17 @@ for num in range(max_num):
         else:
             y_new.append(0)
     ax.bar(x, y_new, bottom=y_old, label = str(num))
-    for i in x:
+    for i in range(len(x)):
         y_old[i] = y_old[i] + y_new[i]
 box = ax.get_position()
 ax.set_position([box.x0, box.y0 + box.height * 0.1,
       box.width, box.height * 0.9])
 
-ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1),
           fancybox=True, shadow=True, ncol=11)
+plt.xticks(rotation=30, ha='right')
+plt.xlabel("datasets")
+plt.ylabel("#language-concept-pairs")
 
 plt.savefig(os.path.join(plots_dir, "value_number_analysis.png"))
 plt.clf()

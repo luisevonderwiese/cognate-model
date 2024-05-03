@@ -169,7 +169,7 @@ def AIC_scores(target_dir, kappa):
 
 
 def get_all_substitution_rates(raxmlng_super_dir, kappa, s = False):
-    r = []
+    r = {}
     for ds_name in os.listdir(raxmlng_super_dir):
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
         prototype_msa_type = "prototype_part_" + str(kappa)
@@ -183,11 +183,11 @@ def get_all_substitution_rates(raxmlng_super_dir, kappa, s = False):
         f = substitution_rates(prefix, x) 
         #if len(f) == 0:
         #    continue
-        r.append(f)
+        r[ds_name] = f
     return r
 
 def get_all_base_frequencies(raxmlng_super_dir, kappa, s = False):
-    r = []
+    r = {} 
     for ds_name in os.listdir(raxmlng_super_dir):
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
         prototype_msa_type = "prototype_part_" + str(kappa)
@@ -198,7 +198,7 @@ def get_all_base_frequencies(raxmlng_super_dir, kappa, s = False):
         f = base_frequencies(prefix, x)
         #if len(f) == 0:
         #    continue
-        r.append(f)
+        r[ds_name]= f
     return r
 
 
@@ -212,6 +212,8 @@ def violin_plots(results, path):
             results_transformed[i-1].append(row[i])
     ax = seaborn.violinplot(data = results_transformed)
     ax.set_xticklabels(models)
+    plt.xlabel("model")
+    plt.ylabel("AIC")
     plt.savefig(path)
     plt.clf()
     plt.close()
@@ -219,13 +221,13 @@ def violin_plots(results, path):
 
 
 def rates_stacked_plot(all_rates, path, plot_type):
-    all_rates = [rates for rates in all_rates if rates != []]
+    all_rates = dict((ds, rates) for ds, rates in all_rates.items() if rates != [])
     if plot_type == "bf":
-        all_rates = [[0] + rates for rates in all_rates] #because of colors
-    max_num = max([len(rates) for rates in all_rates])
-    fig,ax = plt.subplots()
-    x = range(len(all_rates))
-    y_old = [0 for el in x]
+        for ds, rates in all_rates.items():
+            all_rates[ds] = [0] + rates  #because of colors
+    max_num = max([len(rates) for _, rates in all_rates.items()])
+    fig,ax = plt.subplots(figsize=(15, 10))
+    y_old = [0 for el in all_rates.keys()]
     if plot_type == "bf":
         label_list = ['dummy', r'$\pi_1$', r'$\pi_2$', r'$\pi_3$', r'$\pi_4$', r'$\pi_5$', r'$\pi_6$']
     elif plot_type == "sr":
@@ -236,24 +238,24 @@ def rates_stacked_plot(all_rates, path, plot_type):
         return
     for num in range(max_num):
         y_new = []
-        for rates in all_rates:
+        for dataset, rates in all_rates.items():
             if len(rates) > num:
                 y_new.append(rates[num] / sum(rates))
             else:
                 y_new.append(0)
         if plot_type == "bf" and num == 0:
-            ax.bar(x, y_new, bottom=y_old)
+            ax.bar(all_rates.keys(), y_new, bottom=y_old)
         else:
-            ax.bar(x, y_new, bottom=y_old, label = label_list[num])
-        for i in x:
+            ax.bar(all_rates.keys(), y_new, bottom=y_old, label = label_list[num])
+        for i in range(len(all_rates)):
             y_old[i] = y_old[i] + y_new[i]
     box = ax.get_position()
     ax.set_position([box.x0, box.y0 + box.height * 0.1,
                  box.width, box.height * 0.9])
 
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1),
           fancybox=True, shadow=True, ncol=max_num)
-    plt.tick_params(labelbottom = False, bottom = False)
+    plt.xticks(rotation=30, ha='right')
     plt.xlabel("Datasets")
     if plot_type == "bf":
         plt.ylabel("Base Frequencies (relative)")
@@ -298,9 +300,9 @@ plots_super_dir = os.path.join("data", "plots")
 raxmlng_super_dir = os.path.join("data","inferences")
 if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
-kappa = 5 
+kappa = 2 
 
-raxml_ng()
+#raxml_ng()
 AIC_analysis()
 
 rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + ".png"), "sr")
