@@ -293,12 +293,12 @@ def AIC_analysis():
 
 
 version = "multiple-force"
-msa_super_dir = "data/lingdata_cognate/msa"
+msa_super_dir = "data/lexibench/msa"
 plots_super_dir = os.path.join("data", "plots")
 raxmlng_super_dir = os.path.join("data","inferences")
 if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
-kappa = 4 
+kappa = 5 
 
 raxml_ng()
 AIC_analysis()

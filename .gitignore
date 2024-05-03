@@ -3,6 +3,5 @@ data/
 temp.phy.pythia.reduced
 .snakemake/
 test.raxml.*
-data_old/*
-data_old2/*
+data_lingdata/*
 bin/old/*
