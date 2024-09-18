@@ -5,3 +5,4 @@ temp.phy.pythia.reduced
 test.raxml.*
 data_lingdata/*
 bin/old/*
+old/*
