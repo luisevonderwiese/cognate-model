@@ -45,7 +45,23 @@ plt.clf()
 plots_dir = os.path.join(plots_super_dir, "sites_taxa_ratio")
 if not os.path.isdir(plots_dir):
     os.makedirs(plots_dir)
-fig,ax = plt.subplots(figsize=(10, 7.5))
+fig = plt.figure(figsize=(13.5, 9))
+axes = []
+axes.append(plt.subplot2grid(shape=(2,6), loc=(0,1), colspan=2, fig=fig))
+axes.append(plt.subplot2grid((2,6), (0,3), colspan=2, fig=fig))
+axes.append(plt.subplot2grid((2,6), (1,0), colspan=2, fig=fig))
+axes.append(plt.subplot2grid((2,6), (1,2), colspan=2, fig=fig))
+axes.append(plt.subplot2grid((2,6), (1,4), colspan=2, fig=fig))
+cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+for ax in axes:
+    ax.set_xlim([-1, 80])
+    ax.set_ylim([-1, 80])
+    ax.axline([0, 0], slope=1, color = 'lightgray', linewidth = 1, linestyle = "--")
+axes[3].set_xlabel("#languages")
+axes[0].set_ylabel("#colums")
+axes[2].set_ylabel("#colums")
+all_handles = []
+all_labels = []
 for kappa in range(2, 7):
     x_values = []
     y_values = []
@@ -56,9 +72,13 @@ for kappa in range(2, 7):
                 parts = msa_file.readlines()[0].split(" ")
             x_values.append(int(parts[1]))
             y_values.append(int(parts[2]))
-    plt.scatter(x_values, y_values)
-    plt.axline([0, 0], slope=1, color = 'lightgray', linewidth = 1, linestyle = "--")
-    plt.xlabel("num taxa")
-    plt.ylabel("num sites")
-    plt.savefig(os.path.join(plots_dir, "scatter_" + str(kappa) + ".png"))
-    plt.clf()
+    axes[kappa-2].scatter(x_values, y_values, s = 8, label=r'$\kappa=' + str(kappa) + '$', color = cycle[kappa-2])
+    handles, labels = axes[kappa-2].get_legend_handles_labels()
+    all_handles += handles
+    all_labels += labels
+fig.legend(all_handles, all_labels, loc='lower center', ncol = 5)
+#box = ax.get_position()
+#ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
+#ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), fancybox=True, shadow=True, ncol=11)
+plt.savefig(os.path.join(plots_dir, "scatter_all.png"))
+plt.clf()
