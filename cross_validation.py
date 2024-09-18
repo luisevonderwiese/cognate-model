@@ -300,7 +300,7 @@ def violin_plots(results, path):
 msa_super_dir = "data/lexibench/msa"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
-kappa = 4
+kappa = 5 
 random.seed(2)
 all_diff_res = []
 diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_COGs", "diff_GTR", "diff_MK")

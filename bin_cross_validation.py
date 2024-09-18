@@ -61,7 +61,7 @@ def final_llh(prefix):
             return float(line.split(": ")[1])
     return float('nan')
 
-def relative_llh(msa_path, prefix:
+def relative_llh(msa_path, prefix):
     with open(msa_path, "r") as msa_file:
         num_sites = int(msa_file.readlines()[0].split(" ")[2])
     return final_llh(prefix) / num_sites
@@ -86,7 +86,7 @@ def test_raxml_ng(msa_dir, target_dir):
 
 
 def analysis(msa_dir, target_dir):
-    results = [[] for _ in range(8)]
+    results = [[] for _ in range(2)]
     for t in range(10):
         for m, (model, msa_type) in enumerate([("BIN", "bin")]):
             train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
@@ -99,7 +99,7 @@ def analysis(msa_dir, target_dir):
 
 
 def differences_analysis(msa_dir, target_dir):
-    results = [[] for _ in range(4)]
+    results = [[] for _ in range(1)]
     for t in range(10):
         for m, (model, msa_type) in enumerate([("BIN", "bin")]):
             train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
@@ -139,8 +139,8 @@ diff_headers = ("dataset", "diff_BIN")
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
     target_dir = os.path.join(raxmlng_super_dir, ds_name)
-    train_raxml_ng(msa_dir, target_dir)
-    test_raxml_ng(msa_dir, target_dir)
+    #train_raxml_ng(msa_dir, target_dir)
+    #test_raxml_ng(msa_dir, target_dir)
     all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir))
 violin_plots(all_diff_res, plots_super_dir)
 print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))
