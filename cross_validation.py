@@ -122,7 +122,7 @@ def create_samples(kappa, msa_dir):
         print(msa_dir, "Failed")
         return False
     try:
-        prototype_align = AlignIO.read(bin_msa_path, "phylip-relaxed")
+        prototype_align = AlignIO.read(prototype_msa_path, "phylip-relaxed")
     except:
         print(msa_dir, "Failed")
         return False
