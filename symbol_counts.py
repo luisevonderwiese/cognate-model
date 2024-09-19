@@ -17,6 +17,9 @@ msa_super_dir = "data/lexibench/msa/"
 
 df = database.data()
 all_counts = []
+plots_dir = os.path.join(plots_super_dir, "symbol_counts")
+if not os.path.isdir(plots_dir):
+    os.makedirs(plots_dir)
 for dataset in os.listdir(msa_super_dir):
     for kappa in range(2, 7):
         counts_plots_dir = os.path.join(plots_super_dir, str(kappa), "counts")
@@ -36,15 +39,15 @@ for dataset in os.listdir(msa_super_dir):
                         continue
                     counts[symbols_dict[el]] += 1
                     symbol_counts[el] += 1
-            fig, ax = plt.subplots()
-            ax.bar(range(kappa + 1), counts)
-            plt.savefig(os.path.join(counts_plots_dir, dataset + ".png"))
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (15, 5))
+            ax1.bar(range(kappa + 1), counts)
+            ax1.set_xlabel("#cognate classes")
+            ax1.set_ylabel("#language-concept-pairs")
+            ax1.set_title("(a)")
+            ax2.bar(symbol_counts.keys(), symbol_counts.values())
+            ax2.set_xlabel("symbol")
+            ax2.set_ylabel("#language-concept-pairs")
+            ax2.set_title("(b)")
+            plt.savefig(os.path.join(plots_dir, str(kappa) + "_" + dataset + ".png"))
             plt.clf()
             plt.close()
-            fig, ax = plt.subplots()
-            ax.bar(symbol_counts.keys(), symbol_counts.values())
-            plt.savefig(os.path.join(symbol_counts_plots_dir, dataset + ".png"))
-            plt.clf()
-            plt.close()
-            print(symbol_counts)
-            print(counts)
