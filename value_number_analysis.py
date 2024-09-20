@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import matplotlib.colors as cm
 from tabulate import tabulate
 import math
 from scipy import stats
@@ -33,6 +34,7 @@ for line in lines:
         all_counts[dataset] = [int(el) for el in counts_string.split(", ")]
 
 
+all_counts = dict(sorted(all_counts.items()))
 max_num = max([len(counts) for dataset, counts in all_counts.items()])
 fig,ax = plt.subplots(figsize=(15, 10))
 x = [dataset for dataset,counts in all_counts.items()]
@@ -44,7 +46,11 @@ for num in range(max_num):
             y_new.append(counts[num])
         else:
             y_new.append(0)
-    ax.bar(x, y_new, bottom=y_old, label = str(num))
+    if num < 10:
+        color = cm.to_hex(plt.cm.tab10(num))
+    else:
+        color = "black"
+    ax.bar(x, y_new, bottom=y_old, label=r'$\nu=' + str(num) + '$', color = color)
     for i in range(len(x)):
         y_old[i] = y_old[i] + y_new[i]
 box = ax.get_position()

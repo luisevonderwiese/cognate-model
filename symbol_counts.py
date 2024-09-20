@@ -30,7 +30,7 @@ for dataset in os.listdir(msa_super_dir):
         msa_path = os.path.join(msa_super_dir, dataset, "prototype_part_" + str(kappa) + ".phy")
         if os.path.isfile(msa_path):
             counts = [0 for _ in range(kappa + 1)]
-            limit = int(math.pow(2, kappa))
+            limit = int(math.pow(2, kappa) - 1)
             symbol_counts = dict((symbol, 0) for symbol in symbols[:limit])
             alignment = AlignIO.read(msa_path, "phylip-relaxed")
             for record in alignment:
@@ -39,15 +39,20 @@ for dataset in os.listdir(msa_super_dir):
                         continue
                     counts[symbols_dict[el]] += 1
                     symbol_counts[el] += 1
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (15, 5))
-            ax1.bar(range(kappa + 1), counts)
-            ax1.set_xlabel("#cognate classes")
-            ax1.set_ylabel("#language-concept-pairs")
-            ax1.set_title("(a)")
-            ax2.bar(symbol_counts.keys(), symbol_counts.values())
-            ax2.set_xlabel("symbol")
-            ax2.set_ylabel("#language-concept-pairs")
-            ax2.set_title("(b)")
+            fig, ax = plt.subplots(figsize = (15, 6))
+            #ax1.bar(range(kappa + 1), counts)
+            #ax1.set_xlabel("#cognate classes")
+            #ax1.set_ylabel("#language-concept-pairs")
+            #ax1.set_title("(a)")
+            labels = []
+            for i, symbol in enumerate(symbol_counts.keys()):
+                bitvector = bin(i+1)[2:].zfill(kappa) 
+                labels.append(symbol + " [" + str(bitvector) + "]")
+            ax.bar(labels, symbol_counts.values())
+            ax.set_xlabel("symbol")
+            ax.set_ylabel("#occurrences")
+            plt.xticks(rotation=30, ha='right')
+            plt.subplots_adjust(bottom=0.19)
             plt.savefig(os.path.join(plots_dir, str(kappa) + "_" + dataset + ".png"))
             plt.clf()
             plt.close()
