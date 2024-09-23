@@ -8,6 +8,7 @@ import math
 import numpy as np
 from tabulate import tabulate
 import matplotlib.pyplot as plt
+import matplotlib.colors as cm
 import matplotlib
 import seaborn
 import pandas as pd
@@ -283,15 +284,16 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
 
 
 def violin_plots(results, path):
-    models = ["BIN", "COG", "COGs", "GTR", "MK"]
+    models = ["BIN", "MK", "GTR", "COGs", "COG"]
     results_transformed = [[] for _ in range(5)]
     for row in results:
         if row[1] != row[1]:
             continue
         for i in range(1, 6):
             results_transformed[i-1].append(row[i])
-    ax = seaborn.violinplot(data = results_transformed)
+    ax = seaborn.violinplot(data = results_transformed, palette = [cm.to_hex(plt.cm.Set2(num)) for num in range(5)])
     ax.set_xticklabels(models)
+    plt.ylabel(r"$e$ (average)")
     plt.savefig(path + "_violin.png")
     plt.clf()
     plt.close()
@@ -300,7 +302,7 @@ def violin_plots(results, path):
 msa_super_dir = "data/lexibench/msa"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
-kappa = 5 
+kappa = 5
 random.seed(2)
 all_diff_res = []
 diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_COGs", "diff_GTR", "diff_MK")

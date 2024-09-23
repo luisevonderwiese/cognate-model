@@ -9,6 +9,7 @@ import numpy as np
 from tabulate import tabulate
 import matplotlib.pyplot as plt
 import matplotlib
+import matplotlib.colors as cm
 import seaborn
 
 
@@ -161,7 +162,7 @@ def AIC_scores(target_dir, kappa):
     results = []
     bin_msa_type = "bin_part_" + str(kappa)
     prototype_msa_type = "prototype_part_" + str(kappa)
-    for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", prototype_msa_type), ("COGs", prototype_msa_type), ("GTR", prototype_msa_type), ("MK", prototype_msa_type)]):
+    for m, (model, msa_type) in enumerate([("MK", prototype_msa_type), ("GTR", prototype_msa_type), ("COGs", prototype_msa_type), ("COG", prototype_msa_type)]):
         prefix = os.path.join(target_dir, msa_type + "_" + model)
         results.append(AIC(prefix))
     return results
@@ -203,14 +204,14 @@ def get_all_base_frequencies(raxmlng_super_dir, kappa, s = False):
 
 
 def violin_plots(results, path):
-    models = ["BIN", "COG", "COGs", "GTR", "MK"]
-    results_transformed = [[] for _ in range(5)]
+    models = ["MK", "GTR", "COGs", "COG"]
+    results_transformed = [[] for _ in range(4)]
     for row in results:
         if row[1] != row[1]:
             continue
-        for i in range(1, 6):
+        for i in range(1, 5):
             results_transformed[i-1].append(row[i])
-    ax = seaborn.violinplot(data = results_transformed)
+    ax = seaborn.violinplot(data = results_transformed, palette = [cm.to_hex(plt.cm.Set2(num)) for num in range(1, 5)])
     ax.set_xticklabels(models)
     plt.xlabel("model")
     plt.ylabel("AIC")
@@ -228,6 +229,7 @@ def rates_stacked_plot(all_rates, path, plot_type):
     max_num = max([len(rates) for _, rates in all_rates.items()])
     fig,ax = plt.subplots(figsize=(15, 10))
     y_old = [0 for el in all_rates.keys()]
+    all_rates = {k: v for k, v in sorted(list(all_rates.items()))}    
     if plot_type == "bf":
         label_list = ['dummy', r'$\pi_1$', r'$\pi_2$', r'$\pi_3$', r'$\pi_4$', r'$\pi_5$', r'$\pi_6$']
     elif plot_type == "sr":
@@ -291,7 +293,7 @@ def AIC_analysis():
             continue
         AIC_res.append([ds_name] + AIC_scores(target_dir, kappa))
     violin_plots(AIC_res, os.path.join(plots_super_dir, "AIC_" + str(kappa) + ".png"))
-    print(tabulate(AIC_res, tablefmt="pipe", headers = ["dataset", "BIN", "COG", "COGs", "GTR", "MK"]))
+    print(tabulate(AIC_res, tablefmt="pipe", headers = ["dataset", "MK", "GTR", "COGs", "COG"]))
 
 
 version = "multiple-force"
@@ -302,7 +304,7 @@ if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
 kappa = 5 
 
-raxml_ng()
+#raxml_ng()
 AIC_analysis()
 
 rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + ".png"), "sr")
