@@ -27,7 +27,7 @@ for dataset in os.listdir(msa_super_dir):
         for d in [counts_plots_dir, symbol_counts_plots_dir]:
             if not os.path.isdir(d):
                 os.makedirs(d)
-        msa_path = os.path.join(msa_super_dir, dataset, "prototype_part_" + str(kappa) + ".phy")
+        msa_path = os.path.join(msa_super_dir, dataset, "bv_part_" + str(kappa) + ".phy")
         if os.path.isfile(msa_path):
             counts = [0 for _ in range(kappa + 1)]
             limit = int(math.pow(2, kappa) - 1)
@@ -46,7 +46,7 @@ for dataset in os.listdir(msa_super_dir):
             #ax1.set_title("(a)")
             labels = []
             for i, symbol in enumerate(symbol_counts.keys()):
-                bitvector = bin(i+1)[2:].zfill(kappa) 
+                bitvector = bin(i+1)[2:].zfill(kappa)
                 labels.append(symbol + " [" + str(bitvector) + "]")
             ax.bar(labels, symbol_counts.values())
             ax.set_xlabel("symbol")

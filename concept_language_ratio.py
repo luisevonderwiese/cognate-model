@@ -11,7 +11,7 @@ datasets.sort()
 for dataset in datasets:
     counts = [0, 0]
     for kappa in range(2, 7):
-        msa_path = os.path.join(msa_super_dir, dataset, "prototype_part_" + str(kappa) + ".phy")
+        msa_path = os.path.join(msa_super_dir, dataset, "bv_part_" + str(kappa) + ".phy")
         if os.path.isfile(msa_path):
             alignment = AlignIO.read(msa_path, "phylip-relaxed")
             counts.append(alignment.get_alignment_length())
@@ -43,7 +43,7 @@ plt.ylabel("#concepts")
 plt.savefig(os.path.join(plots_super_dir, "subset_sizes.png"))
 plt.clf()
 
-plots_dir = plots_super_dir 
+plots_dir = plots_super_dir
 if not os.path.isdir(plots_dir):
     os.makedirs(plots_dir)
 fig = plt.figure(figsize=(13.5, 9))
@@ -66,7 +66,7 @@ for kappa in range(2, 7):
     x_values = []
     y_values = []
     for dataset in datasets:
-        msa_path = os.path.join(msa_super_dir, dataset, "prototype_part_" + str(kappa) + ".phy")
+        msa_path = os.path.join(msa_super_dir, dataset, "bv_part_" + str(kappa) + ".phy")
         if os.path.isfile(msa_path):
             with open(msa_path, "r") as msa_file:
                 parts = msa_file.readlines()[0].split(" ")

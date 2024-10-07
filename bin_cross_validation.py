@@ -22,7 +22,7 @@ def run_inference(msa_path, model, prefix, args = ""):
         os.makedirs(prefix_dir)
     if not os.path.isfile(prefix + ".raxml.bestTree"):
         args = args + " --redo"
-    command = "./bin/raxml-ng-multiple-force"
+    command = "./bin/raxml-ng-COG"
     command += " --msa " + msa_path
     command += " --model " + model
     command += " --prefix " + prefix
@@ -42,7 +42,7 @@ def run_evaluate(msa_path, prefix, ref_prefix, args = ""):
         return
     with open(ref_prefix + ".raxml.bestModel", "r") as model_file:
         model =  model_file.readlines()[0].split(",")[0]
-    command = "./bin/raxml-ng-multiple-force --evaluate "
+    command = "./bin/raxml-COG --evaluate "
     command += " --msa " + msa_path
     command += " --tree " + ref_prefix + ".raxml.bestTree"
     command += " --model " + model
