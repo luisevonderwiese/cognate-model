@@ -1,27 +1,42 @@
-# Babel2MSA
-Project for generating wordlists and character matrices for phylogenetic inference from the Index of [BabelNet](https://babelnet.org/)
+# Cognate Model
+Project for the evaluation of a model for cognate data implemented in RAxML-NG
 
-## Requierments:
-- Install JDK and set `JAVA_HOME`
-- Set up the Conda Environment
+## Requirements:
+1. Setup and activate the conda environment: 
 ```
 conda env create -f environment.yml
+conda acitvate cognate-model
 ```
-- Install `lex_lookup` (for `epitran`) as explained [here](https://github.com/dmort27/epitran)
-- Install [BabelNet-API Version 5.3](https://babelnet.org/downloads) in `BabelNet-API-5.3/`
-- Place [BabelNet-Index Version 5.0](https://babelnet.org/downloads) in `BabelNet-5.0/`
+2. Adapted RAxML-NG binaries:
+```
+git clone --recursive https://github.com/luisevonderwiese/raxml-ng-cognate.git
+cd raxml-ng-cognate
+git checkout COG
+mkdir build && cd build
+cmake ..
+make
+cd ..
+rm -r build/
+git checkout COGs
+mkdir build && cd build
+cmake ..
+make
+```
+Copy the binaries `raxml-ng-COG` and `raxml-ng-COGs` from `raxml-ng-cognate/bin` to `cognate-model/bin`
 
 ## Execution:
+Data Properties:
 ```
-python convert_core_wordnet.py
-python experiment.py
-python analyze_synsetfilter.py
-python completeness_analysis.py
-python experiment_lexibench.py
-python experiment_lexibank_analyzed.py
-python summarize.py
-python entropies_lexibench.py
-python entropies_lexibank_analyzed.py
-python reverse.py
-python northeuralex_signal.py
+python concept_language_ratio.py
+python symbol_counts.py
+python value_number_analysis.py
 ```
+Tree Searches and Evaluation:
+```
+python inferences.py
+```
+Cross Validation:
+```
+python cross_validation.py
+python bin_cross_validation.py
+``` 
