@@ -1,9 +1,10 @@
-data/
+data/*
+!data/lexibench/
+**/*_cv_*
 **/__pycache__/
 temp.phy.pythia.reduced
 .snakemake/
 test.raxml.*
-data_lingdata/*
 bin/old/*
 old/*
 bin/*
