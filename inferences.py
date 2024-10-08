@@ -302,7 +302,7 @@ raxmlng_super_dir = os.path.join("data","inferences")
 if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
 
-for kappa in range(2, 7):
+for kappa in range(2, 6):
     raxml_ng(kappa)
     AIC_analysis(kappa)
 
