@@ -4,10 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 from tabulate import tabulate
 import math
-from scipy import stats
 import numpy as np
 
-from lingdata import database
 
 
 

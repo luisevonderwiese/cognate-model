@@ -42,7 +42,7 @@ def run_evaluate(msa_path, prefix, ref_prefix, args = ""):
         return
     with open(ref_prefix + ".raxml.bestModel", "r") as model_file:
         model =  model_file.readlines()[0].split(",")[0]
-    command = "./bin/raxml-COG --evaluate "
+    command = "./bin/raxml-ng-COG --evaluate "
     command += " --msa " + msa_path
     command += " --tree " + ref_prefix + ".raxml.bestTree"
     command += " --model " + model

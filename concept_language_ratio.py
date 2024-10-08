@@ -1,4 +1,3 @@
-import lingdata.database as database
 from Bio import AlignIO
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm

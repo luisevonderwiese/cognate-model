@@ -1,0 +1,10 @@
+name: cognate-model 
+channels:
+  - conda-forge
+  - anaconda
+dependencies:
+  - tabulate
+  - biopython
+  - pandas
+  - numpy
+  - seaborn  

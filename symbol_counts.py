@@ -1,4 +1,3 @@
-import lingdata.database as database
 from Bio import AlignIO
 import matplotlib.pyplot as plt
 import os
@@ -15,7 +14,6 @@ plots_super_dir = "data/properties_plots/"
 msa_super_dir = "data/lexibench/msa/"
 
 
-df = database.data()
 all_counts = []
 plots_dir = os.path.join(plots_super_dir, "symbol_counts")
 if not os.path.isdir(plots_dir):
