@@ -6,3 +6,5 @@ test.raxml.*
 data_lingdata/*
 bin/old/*
 old/*
+bin/*
+!bin/.gitkeep
