@@ -12,6 +12,7 @@ import matplotlib.colors as cm
 import matplotlib
 import seaborn
 import pandas as pd
+import statistics
 
 def split_indices(num_sites, num_samples = 10, ratio = 0.6):
     num_sites_train = math.ceil(num_sites * ratio)
@@ -291,6 +292,8 @@ def violin_plots(results, path):
             continue
         for i in range(1, 6):
             results_transformed[i-1].append(row[i])
+    for i in range(5):
+        print(models[i], str(statistics.median(results_transformed[i])))
     ax = seaborn.violinplot(data = results_transformed, palette = [cm.to_hex(plt.cm.Set2(num)) for num in range(5)])
     ax.set_xticklabels(models)
     plt.ylabel(r"$e$ (average)")

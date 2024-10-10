@@ -12,6 +12,7 @@ import matplotlib.colors as cm
 import matplotlib
 import seaborn
 import pandas as pd
+import statistics
 
 def run_inference(msa_path, model, prefix, args = ""):
     if not os.path.isfile(msa_path):
@@ -125,6 +126,7 @@ def violin_plots(results, path):
             continue
         for i in range(1, 2):
             results_transformed[i-1].append(row[i])
+    print(models[0], str(statistics.median(results_transformed[0])))
     plt.rcParams["figure.figsize"] = (3.5,6)
     ax = seaborn.violinplot(data = results_transformed, palette = [cm.to_hex(plt.cm.Set2(num)) for num in range(5)])
     ax.set_xticklabels(models)
@@ -142,8 +144,8 @@ diff_headers = ("dataset", "diff_BIN")
 for ds_name in os.listdir(msa_super_dir):
     msa_dir = os.path.join(msa_super_dir, ds_name)
     target_dir = os.path.join(raxmlng_super_dir, ds_name)
-    train_raxml_ng(msa_dir, target_dir)
-    test_raxml_ng(msa_dir, target_dir)
+    #train_raxml_ng(msa_dir, target_dir)
+    #test_raxml_ng(msa_dir, target_dir)
     all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir))
 violin_plots(all_diff_res, plots_super_dir)
 print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))
