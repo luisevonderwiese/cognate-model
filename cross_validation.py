@@ -14,7 +14,7 @@ import seaborn
 import pandas as pd
 import statistics
 
-def split_indices(num_sites, num_samples = 10, ratio = 0.6):
+def split_indices(num_sites, ratio, num_samples = 10):
     num_sites_train = math.ceil(num_sites * ratio)
     res = []
     for i in range(num_samples):
@@ -106,14 +106,15 @@ def relative_llh(msa_path, prefix, kappa, model):
     return final_llh(prefix) / num_sites
     #return final_llh(prefix)
 
-def create_samples(kappa, msa_dir):
+def create_samples(kappa, ratio, msa_dir, cv_msa_dir):
     bin_msa_type = "bin_part_" + str(kappa)
     bv_msa_type = "bv_part_" + str(kappa)
     bin_msa_path = os.path.join(msa_dir, bin_msa_type + ".phy")
     bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
     with open(bv_msa_path, "r") as msa_file:
         num_sites = int(msa_file.readlines()[0].split(" ")[2])
-    if num_sites < 10:
+    smaller_part_size = num_sites * (1 - ratio)
+    if smaller_part_size < 4:
         return False
     with open(bin_msa_path, "r") as msa_file:
         num_sites_bin = int(msa_file.readlines()[0].split(" ")[2])
@@ -128,7 +129,9 @@ def create_samples(kappa, msa_dir):
     except:
         print(msa_dir, "Failed")
         return False
-    indices_list = split_indices(num_sites)
+    if not os.path.isdir(cv_msa_dir):
+        os.makedirs(cv_msa_dir)
+    indices_list = split_indices(num_sites, ratio)
     for (t, train_indices) in enumerate(indices_list):
         bin_train_align = empty_align(bin_align)
         bin_test_align = empty_align(bin_align)
@@ -141,16 +144,16 @@ def create_samples(kappa, msa_dir):
             else:
                 bv_test_align = concat_align(bv_test_align, bv_align[:, s:s+1])
                 bin_test_align = concat_align(bin_test_align, bin_align[:, s*kappa : (s+1) * kappa])
-        with open(os.path.join(msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy"),"w+") as f:
+        with open(os.path.join(cv_msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy"),"w+") as f:
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(bin_train_align)
-        with open(os.path.join(msa_dir, bin_msa_type + "_cv_test_" + str(t) + ".phy"),"w+") as f:
+        with open(os.path.join(cv_msa_dir, bin_msa_type + "_cv_test_" + str(t) + ".phy"),"w+") as f:
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(bin_test_align)
-        with open(os.path.join(msa_dir, bv_msa_type + "_cv_train_" + str(t) + ".phy"),"w+") as f:
+        with open(os.path.join(cv_msa_dir, bv_msa_type + "_cv_train_" + str(t) + ".phy"),"w+") as f:
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(bv_train_align)
-        with open(os.path.join(msa_dir, bv_msa_type + "_cv_test_" + str(t) + ".phy"),"w+") as f:
+        with open(os.path.join(cv_msa_dir, bv_msa_type + "_cv_test_" + str(t) + ".phy"),"w+") as f:
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(bv_test_align)
     print(msa_dir, "done")
@@ -305,25 +308,32 @@ def violin_plots(results, path):
 msa_super_dir = "data/lexibench/msa"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
-for kappa in range(2, 5):
+for kappa in range(5, 7):
     random.seed(2)
-    all_diff_res = []
     diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_COGs", "diff_GTR", "diff_MK")
-    for ds_name in os.listdir(msa_super_dir):
-        msa_dir = os.path.join(msa_super_dir, ds_name)
-        target_dir = os.path.join(raxmlng_super_dir, ds_name)
-        bin_msa_type = "bin_part_" + str(kappa)
-        bv_msa_type = "bv_part_" + str(kappa)
-        bin_msa_path = os.path.join(msa_dir, bin_msa_type + ".phy")
-        bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
-        if not os.path.isfile(bin_msa_path) or not os.path.isfile(bv_msa_path):
-            continue
-        success = create_samples(kappa, msa_dir)
-        if not success:
-            continue
-        train_raxml_ng(msa_dir, target_dir, kappa)
-        test_raxml_ng(msa_dir, target_dir, kappa)
-        all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir, kappa))
-        plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name)
-    violin_plots(all_diff_res, os.path.join(plots_super_dir, str(kappa)))
-    print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))
+    for ratio in [0.9, 0.8, 0.7, 0.6, 0.5]:
+        print(ratio)
+        all_diff_res = []
+        plots_dir = os.path.join(plots_super_dir, "cv_" + str(int(ratio * 100)))
+        if not os.path.isdir(plots_dir):
+            os.makedirs(plots_dir)
+        for ds_name in os.listdir(msa_super_dir):
+            msa_dir = os.path.join(msa_super_dir, ds_name)
+            target_dir = os.path.join(raxmlng_super_dir, ds_name, "cv_" + str(int(ratio * 100)))
+            bin_msa_type = "bin_part_" + str(kappa)
+            bv_msa_type = "bv_part_" + str(kappa)
+            bin_msa_path = os.path.join(msa_dir, bin_msa_type + ".phy")
+            bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
+            if not os.path.isfile(bin_msa_path) or not os.path.isfile(bv_msa_path):
+                continue
+            cv_msa_dir = os.path.join(msa_dir, "cv_" + str(int(ratio * 100)))
+            success = create_samples(kappa, ratio, msa_dir, cv_msa_dir)
+            if not success:
+                continue
+            train_raxml_ng(cv_msa_dir, target_dir, kappa)
+            test_raxml_ng(cv_msa_dir, target_dir, kappa)
+            all_diff_res.append([ds_name] + differences_analysis(cv_msa_dir, target_dir, kappa))
+            plots(cv_msa_dir, target_dir, kappa, plots_dir, ds_name)
+        if len(all_diff_res) > 0:
+            violin_plots(all_diff_res, os.path.join(plots_dir, str(kappa)))
+        print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))

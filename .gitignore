@@ -1,5 +1,4 @@
 data/*
-!data/lexibench/
 **/*_cv_*
 **/__pycache__/
 temp.phy.pythia.reduced
