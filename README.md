@@ -24,6 +24,9 @@ make
 ```
 Copy the binaries `raxml-ng-COG` and `raxml-ng-COGs` from `raxml-ng-cognate/bin` to `cognate-model/bin`
 
+3. Data
+From lexibench, branch `for_cognate_data`
+
 ## Execution:
 Data Properties:
 ```
