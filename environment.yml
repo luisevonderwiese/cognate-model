@@ -7,4 +7,6 @@ dependencies:
   - biopython
   - pandas
   - numpy
-  - seaborn  
+  - seaborn
+  - pip:
+    - lingpy>=2.6.13
