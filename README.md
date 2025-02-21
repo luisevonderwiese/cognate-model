@@ -26,7 +26,6 @@ Copy the binaries `raxml-ng-COG` and `raxml-ng-COGs` from `raxml-ng-cognate/bin`
 
 3. Data
 From lexibench, branch `for_cognate_data`
-From lexibank-analyzed, branch `wordlist_scripts`
 
 ## Execution:
 Data Properties:

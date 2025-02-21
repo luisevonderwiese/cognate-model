@@ -8,5 +8,3 @@ dependencies:
   - pandas
   - numpy
   - seaborn
-  - pip:
-    - lingpy>=2.6.13
