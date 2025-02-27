@@ -287,7 +287,7 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
 
 
 
-def violin_plots(results, path):
+def box_plots(results, path):
     models = ["BIN", "MK", "GTR", "COGs", "COG"]
     results_transformed = [[] for _ in range(5)]
     for row in results:
@@ -297,10 +297,10 @@ def violin_plots(results, path):
             results_transformed[i-1].append(row[i])
     for i in range(5):
         print(models[i], str(statistics.median(results_transformed[i])))
-    ax = seaborn.violinplot(data = results_transformed, palette = [cm.to_hex(plt.cm.Set2(num)) for num in range(5)])
+    ax = seaborn.boxplot(data = results_transformed, palette = [cm.to_hex(plt.cm.Set2(num)) for num in range(5)])
     ax.set_xticklabels(models)
     plt.ylabel(r"$e$ (average)")
-    plt.savefig(path + "_violin.png")
+    plt.savefig(path + "_box.png")
     plt.clf()
     plt.close()
 
@@ -308,7 +308,7 @@ def violin_plots(results, path):
 msa_super_dir = "data/lexibench/msa"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
-for kappa in range(5, 7):
+for kappa in range(2, 7):
     random.seed(2)
     diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_COGs", "diff_GTR", "diff_MK")
     for ratio in [0.9, 0.8, 0.7, 0.6, 0.5]:
@@ -335,5 +335,5 @@ for kappa in range(5, 7):
             all_diff_res.append([ds_name] + differences_analysis(cv_msa_dir, target_dir, kappa))
             plots(cv_msa_dir, target_dir, kappa, plots_dir, ds_name)
         if len(all_diff_res) > 0:
-            violin_plots(all_diff_res, os.path.join(plots_dir, str(kappa)))
+            box_plots(all_diff_res, os.path.join(plots_dir, str(kappa)))
         print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))
