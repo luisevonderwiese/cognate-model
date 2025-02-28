@@ -1,14 +1,7 @@
-from Bio import AlignIO
-from Bio.Align import MultipleSeqAlignment
-from Bio.SeqRecord import SeqRecord
-from Bio.AlignIO.PhylipIO import RelaxedPhylipWriter
-import random
 import os
 import math
-import numpy as np
 from tabulate import tabulate
 import matplotlib.pyplot as plt
-import matplotlib
 import matplotlib.colors as cm
 import seaborn
 
@@ -35,30 +28,11 @@ def run_inference(msa_path, model, prefix, s = False):
     os.system(command)
 
 
-def final_llh(prefix):
-    if not os.path.isfile(prefix + ".raxml.log"):
-        return float("nan")
-    with open(prefix + ".raxml.log", "r") as logfile:
-        lines = logfile.readlines()
-    for line in lines:
-        if line.startswith("Final LogLikelihood: "):
-            return float(line.split(": ")[1])
-    return float('nan')
-
-def relative_llh(msa_path, prefix, kappa, model):
-    with open(msa_path, "r") as msa_file:
-        num_sites = int(msa_file.readlines()[0].split(" ")[2])
-    if model == "BIN":
-        num_sites = int(num_sites / kappa)
-    return final_llh(prefix) / num_sites
-    #return final_llh(prefix)
-
-
 def AIC(prefix):
     logpath = prefix + ".raxml.log"
     if not os.path.isfile(logpath):
         return float('nan')
-    with open(logpath, "r") as logfile:
+    with open(logpath, "r", encoding = "utf-8") as logfile:
         lines = logfile.readlines()
     for line in lines:
         if line.startswith("AIC"):
@@ -74,7 +48,7 @@ def substitution_rates(prefix, x):
     file_path = prefix + ".raxml.log"
     if not os.path.isfile(file_path):
         return []
-    with open(file_path, "r") as logfile:
+    with open(file_path, "r", encoding = "utf-8") as logfile:
         lines = logfile.readlines()
     rates = []
     for line in lines:
@@ -87,25 +61,24 @@ def substitution_rates(prefix, x):
         return rates
     if x == -1: #code for single lamda rate
         return [rates[0], rates[1]]
-    elif x == 4:
+    if x == 4:
         return [rates[0], rates[1]]
-    elif x == 8:
+    if x == 8:
         return [rates[0], rates[1], rates[14]]
-    elif x == 16:
+    if x == 16:
         return [rates[0], rates[1], rates[30], rates[76]]
-    elif x == 32:
+    if x == 32:
         return [rates[0], rates[1], rates[62], rates[172], rates[344]]
-    elif x == 64:
+    if x == 64:
         return [rates[0], rates[1], rates[126], rates[364], rates[792], rates[1456]]
-    else:
-        print("Illegal x")
-        return []
+    print("Illegal x")
+    return []
 
 def base_frequencies(prefix, x):
     file_path = prefix + ".raxml.log"
     if not os.path.isfile(file_path):
         return []
-    with open(file_path, "r") as logfile:
+    with open(file_path, "r", encoding = "utf-8") as logfile:
         lines = logfile.readlines()
     frequencies = []
     for line in lines:
@@ -116,25 +89,18 @@ def base_frequencies(prefix, x):
     if frequencies == []:
         print("Empty frequences")
         return []
-    elif x == 4:
+    if x == 4:
         return [frequencies[0], frequencies[2]]
-    elif x == 8:
+    if x == 8:
         return [frequencies[0], frequencies[2], frequencies[6]]
-    elif x == 16:
+    if x == 16:
         return [frequencies[0], frequencies[2], frequencies[6], frequencies[14]]
-    elif x == 32:
+    if x == 32:
         return [frequencies[0], frequencies[2], frequencies[6], frequencies[14], frequencies[30]]
-    elif x == 64:
+    if x == 64:
         return [frequencies[0], frequencies[2], frequencies[6], frequencies[14], frequencies[30], frequencies[62]]
-    else:
-        print("Illegal x")
-        return []
-
-
-def sites_taxa_ratio(msa_path):
-    with open(msa_path, "r") as msa_file:
-        parts = msa_file.readlines()[0].split(" ")
-    return int(parts[2]) / int(parts[1])
+    print("Illegal x")
+    return []
 
 
 
@@ -160,9 +126,9 @@ def run_raxml_ng(msa_dir, target_dir, kappa):
 
 def AIC_scores(target_dir, kappa):
     results = []
-    bin_msa_type = "bin_part_" + str(kappa)
+    #bin_msa_type = "bin_part_" + str(kappa)
     bv_msa_type = "bv_part_" + str(kappa)
-    for m, (model, msa_type) in enumerate([("MK", bv_msa_type), ("GTR", bv_msa_type), ("COGs", bv_msa_type), ("COG", bv_msa_type)]):
+    for _, (model, msa_type) in enumerate([("MK", bv_msa_type), ("GTR", bv_msa_type), ("COGs", bv_msa_type), ("COG", bv_msa_type)]):
         prefix = os.path.join(target_dir, msa_type + "_" + model)
         results.append(AIC(prefix))
     return results
@@ -227,8 +193,8 @@ def rates_stacked_plot(all_rates, path, plot_type):
         for ds, rates in all_rates.items():
             all_rates[ds] = [0] + rates  #because of colors
     max_num = max([len(rates) for _, rates in all_rates.items()])
-    fig,ax = plt.subplots(figsize=(15, 10))
-    y_old = [0 for el in all_rates.keys()]
+    _, ax = plt.subplots(figsize=(15, 10))
+    y_old = [0 for _ in all_rates.keys()]
     all_rates = {k: v for k, v in sorted(list(all_rates.items()))}
     if plot_type == "bf":
         label_list = ['dummy', r'$\pi_1$', r'$\pi_2$', r'$\pi_3$', r'$\pi_4$', r'$\pi_5$', r'$\pi_6$']
@@ -240,7 +206,7 @@ def rates_stacked_plot(all_rates, path, plot_type):
         return
     for num in range(max_num):
         y_new = []
-        for dataset, rates in all_rates.items():
+        for __, rates in all_rates.items():
             if len(rates) > num:
                 y_new.append(rates[num] / sum(rates))
             else:

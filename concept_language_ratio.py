@@ -5,7 +5,7 @@ import os
 plots_super_dir = "data/properties_plots/"
 msa_super_dir = "data/lexibench/msa/"
 all_counts = []
-datasets = [dataset for dataset in os.listdir(msa_super_dir)]
+datasets = list(os.listdir(msa_super_dir))
 datasets.sort()
 for dataset in datasets:
     counts = [0, 0]
@@ -23,7 +23,7 @@ for dataset in datasets:
 
 
 fig,ax = plt.subplots(figsize=(15, 10))
-y_old = [0 for el in datasets]
+y_old = [0 for _ in datasets]
 for num in range(2, 7):
     y_new = []
     for counts in all_counts:
@@ -67,7 +67,7 @@ for kappa in range(2, 7):
     for dataset in datasets:
         msa_path = os.path.join(msa_super_dir, dataset, "bv_part_" + str(kappa) + ".phy")
         if os.path.isfile(msa_path):
-            with open(msa_path, "r") as msa_file:
+            with open(msa_path, "r", encoding = "utf-8") as msa_file:
                 parts = msa_file.readlines()[0].split(" ")
             x_values.append(int(parts[1]))
             y_values.append(int(parts[2]))

@@ -1,17 +1,8 @@
-from Bio import AlignIO
-from Bio.Align import MultipleSeqAlignment
-from Bio.SeqRecord import SeqRecord
-from Bio.AlignIO.PhylipIO import RelaxedPhylipWriter
-import random
 import os
-import math
-import numpy as np
 from tabulate import tabulate
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
-import matplotlib
 import seaborn
-import pandas as pd
 import statistics
 
 def run_inference(msa_path, model, prefix, args = ""):
@@ -41,7 +32,7 @@ def run_evaluate(msa_path, prefix, ref_prefix, args = ""):
         os.makedirs(prefix_dir)
     if not os.path.isfile(ref_prefix + ".raxml.bestModel"):
         return
-    with open(ref_prefix + ".raxml.bestModel", "r") as model_file:
+    with open(ref_prefix + ".raxml.bestModel", "r", encoding = "utf-8") as model_file:
         model =  model_file.readlines()[0].split(",")[0]
     command = "./bin/raxml-ng-COG --evaluate "
     command += " --msa " + msa_path
@@ -56,7 +47,7 @@ def run_evaluate(msa_path, prefix, ref_prefix, args = ""):
 def final_llh(prefix):
     if not os.path.isfile(prefix + ".raxml.log"):
         return float("nan")
-    with open(prefix + ".raxml.log", "r") as logfile:
+    with open(prefix + ".raxml.log", "r", encoding = "uft-8") as logfile:
         lines = logfile.readlines()
     for line in lines:
         if line.startswith("Final LogLikelihood: "):
@@ -64,7 +55,7 @@ def final_llh(prefix):
     return float('nan')
 
 def relative_llh(msa_path, prefix):
-    with open(msa_path, "r") as msa_file:
+    with open(msa_path, "r", encoding = "utf-8") as msa_file:
         num_sites = int(msa_file.readlines()[0].split(" ")[2])
     return final_llh(prefix) / num_sites
     #return final_llh(prefix)

@@ -2,19 +2,11 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
-from tabulate import tabulate
-import math
-import numpy as np
-
-
-
-
 
 
 plots_dir = "data/properties_plots"
 if not os.path.isdir(plots_dir):
     os.makedirs(plots_dir)
-msa_super_dir = "data/lexibench/msa"
 metadata_path = "data/lexibench/metadata.tsv"
 metadata_df = pd.read_csv(metadata_path, sep = "\t")
 
@@ -30,7 +22,7 @@ for i, row in metadata_df.iterrows():
 
 all_counts = dict(sorted(all_counts.items()))
 max_num = max([len(counts) for dataset, counts in all_counts.items()])
-fig,ax = plt.subplots(figsize=(15, 10))
+_, ax = plt.subplots(figsize=(15, 10))
 x = [dataset for dataset,counts in all_counts.items()]
 y_old = [0 for el in x]
 for num in range(max_num):

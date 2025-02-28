@@ -11,6 +11,3 @@ plt.ylabel("num datasets")
 plt.savefig(os.path.join(plots_dir, "hist_entropies_lexibench.png"))
 plt.clf()
 plt.close()
-
-
-

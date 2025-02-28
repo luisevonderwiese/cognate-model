@@ -11,16 +11,15 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 import matplotlib
 import seaborn
-import pandas as pd
 import statistics
 
 def split_indices(num_sites, ratio, num_samples = 10):
     num_sites_train = math.ceil(num_sites * ratio)
     res = []
-    for i in range(num_samples):
-        l = [_ for _ in range(num_sites)]
-        random.shuffle(l)
-        train_indices = l[:num_sites_train]
+    for _ in range(num_samples):
+        li = [__ for __ in range(num_sites)]
+        random.shuffle(li)
+        train_indices = li[:num_sites_train]
         res.append(train_indices)
     return res
 
@@ -73,7 +72,7 @@ def run_evaluate(msa_path, prefix, ref_prefix, s = False):
         os.makedirs(prefix_dir)
     if not os.path.isfile(ref_prefix + ".raxml.bestModel"):
         return
-    with open(ref_prefix + ".raxml.bestModel", "r") as model_file:
+    with open(ref_prefix + ".raxml.bestModel", "r", encoding = "utf-8") as model_file:
         model =  model_file.readlines()[0].split(",")[0]
     if s:
         command = "./bin/raxml-ng-COGs --evaluate "
@@ -91,7 +90,7 @@ def run_evaluate(msa_path, prefix, ref_prefix, s = False):
 def final_llh(prefix):
     if not os.path.isfile(prefix + ".raxml.log"):
         return float("nan")
-    with open(prefix + ".raxml.log", "r") as logfile:
+    with open(prefix + ".raxml.log", "r", encoding = "utf-8") as logfile:
         lines = logfile.readlines()
     for line in lines:
         if line.startswith("Final LogLikelihood: "):
@@ -99,7 +98,7 @@ def final_llh(prefix):
     return float('nan')
 
 def relative_llh(msa_path, prefix, kappa, model):
-    with open(msa_path, "r") as msa_file:
+    with open(msa_path, "r", encoding = "utf-8") as msa_file:
         num_sites = int(msa_file.readlines()[0].split(" ")[2])
     if model == "BIN":
         num_sites = int(num_sites / kappa)
@@ -111,12 +110,12 @@ def create_samples(kappa, ratio, msa_dir, cv_msa_dir):
     bv_msa_type = "bv_part_" + str(kappa)
     bin_msa_path = os.path.join(msa_dir, bin_msa_type + ".phy")
     bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
-    with open(bv_msa_path, "r") as msa_file:
+    with open(bv_msa_path, "r", encoding = "utf-8") as msa_file:
         num_sites = int(msa_file.readlines()[0].split(" ")[2])
     smaller_part_size = num_sites * (1 - ratio)
     if smaller_part_size < 4:
         return False
-    with open(bin_msa_path, "r") as msa_file:
+    with open(bin_msa_path, "r", encoding = "utf-8") as msa_file:
         num_sites_bin = int(msa_file.readlines()[0].split(" ")[2])
     assert(num_sites_bin == kappa * num_sites)
     try:
@@ -144,16 +143,20 @@ def create_samples(kappa, ratio, msa_dir, cv_msa_dir):
             else:
                 bv_test_align = concat_align(bv_test_align, bv_align[:, s:s+1])
                 bin_test_align = concat_align(bin_test_align, bin_align[:, s*kappa : (s+1) * kappa])
-        with open(os.path.join(cv_msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy"),"w+") as f:
+        with open(os.path.join(cv_msa_dir, bin_msa_type + "_cv_train_" + str(t) + ".phy"),
+                "w+", encoding = "utf-8") as f:
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(bin_train_align)
-        with open(os.path.join(cv_msa_dir, bin_msa_type + "_cv_test_" + str(t) + ".phy"),"w+") as f:
+        with open(os.path.join(cv_msa_dir, bin_msa_type + "_cv_test_" + str(t) + ".phy"),
+                "w+", encoding = "utf-8") as f:
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(bin_test_align)
-        with open(os.path.join(cv_msa_dir, bv_msa_type + "_cv_train_" + str(t) + ".phy"),"w+") as f:
+        with open(os.path.join(cv_msa_dir, bv_msa_type + "_cv_train_" + str(t) + ".phy"),
+                "w+", encoding = "utf-8") as f:
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(bv_train_align)
-        with open(os.path.join(cv_msa_dir, bv_msa_type + "_cv_test_" + str(t) + ".phy"),"w+") as f:
+        with open(os.path.join(cv_msa_dir, bv_msa_type + "_cv_test_" + str(t) + ".phy"),
+                "w+", encoding = "utf-8") as f:
             writer = RelaxedPhylipWriter(f)
             writer.write_alignment(bv_test_align)
     print(msa_dir, "done")
@@ -183,7 +186,6 @@ def train_raxml_ng(msa_dir, target_dir, kappa):
 def test_raxml_ng(msa_dir, target_dir, kappa):
     bin_msa_type = "bin_part_" + str(kappa)
     bv_msa_type = "bv_part_" + str(kappa)
-    x = int(math.pow(2, kappa))
     for t in range(10):
         bin_msa_path = os.path.join(msa_dir, bin_msa_type + "_cv_test_" + str(t) + ".phy")
         bin_prefix = os.path.join(target_dir, bin_msa_type + "_cv_train_" + str(t) + "_BIN")
@@ -259,7 +261,7 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
             test_msa_path = os.path.join(msa_dir, msa_type + "_cv_test_" + str(t) + ".phy")
             test_prefix = os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)
             results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix, kappa, model))
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.bar(ind + offsets[0], results[0], width, label='train BIN', color = cmap_train(0))
     ax.bar(ind + offsets[1], results[1], width, label='test BIN', color = cmap_test(0))
     ax.bar(ind + offsets[2], results[2], width, label='train COG', color = cmap_train(1))
