@@ -4,7 +4,7 @@ Project for the evaluation of a model for cognate data implemented in RAxML-NG
 ## Requirements:
 1. Setup and activate the conda environment: 
 ```
-conda env create -f environment.yml
+conda env create -f environment.yml python=3.10
 conda acitvate cognate-model
 ```
 2. Adapted RAxML-NG binaries:

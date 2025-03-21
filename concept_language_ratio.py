@@ -1,9 +1,11 @@
-from Bio import AlignIO
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 import os
+
+import util
+
 plots_super_dir = "data/properties_plots/"
-msa_super_dir = "data/lexibench/msa/"
+msa_super_dir = "data/lexibench/character_matrices/"
 all_counts = []
 datasets = list(os.listdir(msa_super_dir))
 datasets.sort()
@@ -12,35 +14,11 @@ for dataset in datasets:
     for kappa in range(2, 7):
         msa_path = os.path.join(msa_super_dir, dataset, "bv_part_" + str(kappa) + ".phy")
         if os.path.isfile(msa_path):
-            alignment = AlignIO.read(msa_path, "phylip-relaxed")
+            alignment = util.safe_msa_read(msa_path)
             counts.append(alignment.get_alignment_length())
         else:
             counts.append(0)
     all_counts.append(counts)
-
-
-
-
-
-fig,ax = plt.subplots(figsize=(15, 10))
-y_old = [0 for _ in datasets]
-for num in range(2, 7):
-    y_new = []
-    for counts in all_counts:
-        y_new.append(counts[num])
-    ax.bar(datasets, y_new, bottom=y_old, label=r'$\kappa=' + str(num) + '$', color = cm.to_hex(plt.cm.Set1(num-2)))
-    for i in range(len(datasets)):
-        y_old[i] = y_old[i] + y_new[i]
-box = ax.get_position()
-ax.set_position([box.x0, box.y0 + box.height * 0.1,
-      box.width, box.height * 0.9])
-plt.xticks(rotation=30, ha='right')
-ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1),
-          fancybox=True, shadow=True, ncol=11)
-plt.xlabel("datasets")
-plt.ylabel("#concepts")
-plt.savefig(os.path.join(plots_super_dir, "subset_sizes.png"))
-plt.clf()
 
 plots_dir = plots_super_dir
 if not os.path.isdir(plots_dir):

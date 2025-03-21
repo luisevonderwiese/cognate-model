@@ -1,4 +1,16 @@
-data/*
+data/lexibench/bin_cross_validation/*
+data/lexibench/character_matrices/*
+data/lexibench/download/*
+data/lexibench/lingpy_wordlists/*
+data/bin_cross_validation/*  
+data/bv_cross_validation_data/* 
+data/cross_validation/*  
+data/cross_validation_plots/*  
+data/inferences/*  
+data/plots/*
+data/properties_plots/*
+!data/lexibench/etc/*
+
 **/*_cv_*
 **/__pycache__/
 temp.phy.pythia.reduced

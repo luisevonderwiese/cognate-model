@@ -262,7 +262,7 @@ def AIC_analysis(kappa):
     print(tabulate(AIC_res, tablefmt="pipe", headers = ["dataset", "MK", "GTR", "COGs", "COG"]))
 
 
-msa_super_dir = "data/lexibench/msa"
+msa_super_dir = "data/lexibench/character_matrices"
 plots_super_dir = os.path.join("data", "plots")
 raxmlng_super_dir = os.path.join("data","inferences")
 if not os.path.isdir(plots_super_dir):

@@ -1,7 +1,8 @@
-from Bio import AlignIO
 import matplotlib.pyplot as plt
 import os
 import math
+
+import util
 
 symbols = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G",
          "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X",
@@ -11,7 +12,7 @@ symbols = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D",
 symbols_dict  = dict((symbol, (i+1).bit_count()) for (i, symbol) in enumerate(symbols))
 
 plots_super_dir = "data/properties_plots/"
-msa_super_dir = "data/lexibench/msa/"
+msa_super_dir = "data/lexibench/character_matrices/"
 
 
 all_counts = []
@@ -30,7 +31,7 @@ for dataset in os.listdir(msa_super_dir):
             counts = [0 for _ in range(kappa + 1)]
             limit = int(math.pow(2, kappa) - 1)
             symbol_counts = dict((symbol, 0) for symbol in symbols[:limit])
-            alignment = AlignIO.read(msa_path, "phylip-relaxed")
+            alignment = util.safe_msa_read(msa_path)
             for record in alignment:
                 for el in record.seq:
                     if el in ['-', '?']:

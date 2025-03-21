@@ -63,17 +63,17 @@ def relative_llh(msa_path, prefix):
 
 def train_raxml_ng(msa_dir, target_dir):
     for t in range(10):
-        bin_msa_path = os.path.join(msa_dir, "bin_cv_train_" + str(t) + ".phy")
-        bin_prefix = os.path.join(target_dir, "bin_cv_train_" + str(t) + "_BIN")
+        bin_msa_path = os.path.join(msa_dir, "test", "bin" + str(t) + ".phy")
+        bin_prefix = os.path.join(target_dir, "train", "bin" + str(t), "BIN")
         run_inference(bin_msa_path, "BIN", bin_prefix)
 
 
 
 def test_raxml_ng(msa_dir, target_dir):
     for t in range(10):
-        bin_msa_path = os.path.join(msa_dir, "bin_cv_test_" + str(t) + ".phy")
-        bin_prefix = os.path.join(target_dir, "bin_cv_train_" + str(t) + "_BIN")
-        bin_test_prefix = os.path.join(target_dir, "bin_cv_test_" + str(t) + "_BIN")
+        bin_msa_path = os.path.join(msa_dir, "test", "bin" + str(t) + ".phy")
+        bin_prefix = os.path.join(target_dir, "train", "bin" + str(t), "BIN")
+        bin_test_prefix = os.path.join(target_dir, "test", "bin" + str(t), "BIN")
         run_evaluate(bin_msa_path, bin_test_prefix, bin_prefix)
 
 
@@ -82,11 +82,11 @@ def analysis(msa_dir, target_dir):
     results = [[] for _ in range(2)]
     for t in range(10):
         for m, (model, msa_type) in enumerate([("BIN", "bin")]):
-            train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
-            train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
+            train_msa_path = os.path.join(msa_dir, "train", msa_type + str(t) + ".phy")
+            train_prefix = os.path.join(target_dir, "train", msa_type +  str(t), model)
             results[m * 2].append(relative_llh(train_msa_path, train_prefix))
-            test_msa_path = os.path.join(msa_dir, msa_type + "_cv_test_" + str(t) + ".phy")
-            test_prefix = os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)
+            test_msa_path = os.path.join(msa_dir, "test", msa_type + str(t) + ".phy")
+            test_prefix = os.path.join(target_dir, "test", msa_type +  str(t), model)
             results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix))
     return [sum(el) / len(el) for el in results]
 
@@ -95,11 +95,11 @@ def differences_analysis(msa_dir, target_dir):
     results = [[] for _ in range(1)]
     for t in range(10):
         for m, (model, msa_type) in enumerate([("BIN", "bin")]):
-            train_msa_path = os.path.join(msa_dir, msa_type + "_cv_train_" + str(t) + ".phy")
-            train_prefix = os.path.join(target_dir, msa_type + "_cv_train_" + str(t) + "_" + model)
+            train_msa_path = os.path.join(msa_dir, "train", msa_type + str(t) + ".phy")
+            train_prefix = os.path.join(target_dir, "train", msa_type +  str(t), model)
             rel_train_llh = relative_llh(train_msa_path, train_prefix)
-            test_msa_path = os.path.join(msa_dir, msa_type + "_cv_test_" + str(t) + ".phy")
-            test_prefix = os.path.join(target_dir, msa_type + "_cv_test_" + str(t) + "_" + model)
+            test_msa_path = os.path.join(msa_dir, "test", msa_type + str(t) + ".phy")
+            test_prefix = os.path.join(target_dir, "test", msa_type +  str(t), model)
             rel_test_llh = relative_llh(test_msa_path, test_prefix)
             results[m].append((rel_test_llh - rel_train_llh) / rel_train_llh)
             #results[m].append(rel_train_llh - rel_test_llh)
@@ -132,11 +132,12 @@ raxmlng_super_dir = "data/bin_cross_validation"
 plots_super_dir = "data/bin_cross_validation_plots"
 all_diff_res = []
 diff_headers = ("dataset", "diff_BIN")
-for ds_name in os.listdir(msa_super_dir):
-    msa_dir = os.path.join(msa_super_dir, ds_name)
-    target_dir = os.path.join(raxmlng_super_dir, ds_name)
-    #train_raxml_ng(msa_dir, target_dir)
-    #test_raxml_ng(msa_dir, target_dir)
-    all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir))
-box_plots(all_diff_res, plots_super_dir)
-print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))
+for train_ratio in [60]:
+    for ds_name in os.listdir(msa_super_dir):
+        msa_dir = os.path.join(msa_super_dir, ds_name, "cv_" + str(train_ratio))
+        target_dir = os.path.join(raxmlng_super_dir, ds_name, "cv_" + str(train_ratio))
+        train_raxml_ng(msa_dir, target_dir)
+        test_raxml_ng(msa_dir, target_dir)
+        all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir))
+    box_plots(all_diff_res, os.path.join(plots_super_dir, "cv_" + str(train_ratio)))
+    print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))
