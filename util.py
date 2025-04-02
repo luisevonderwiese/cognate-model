@@ -1,9 +1,9 @@
 import os
+import math
 from Bio import AlignIO
 
 
 def write_padded_msa(msa_path, outpath):
-    print(msa_path)
     with open(msa_path, "r", encoding="utf-8") as msa_file:
         msa_string = msa_file.read()
     parts = msa_string.split("\n\n")
@@ -40,3 +40,20 @@ def safe_msa_read(path):
         align = AlignIO.read("temp.phy", "phylip-relaxed")
         os.remove("temp.phy")
         return align
+
+
+def site_entropy(site):
+    site = site.replace("-", "")
+    entropy = 0
+    for char in ["0", "1"]:
+        count = site.count(char)
+        if count == 0:
+            entropy_x = 0
+        else:
+            prob = count / len(site)
+            entropy_x = prob * math.log2(prob)
+        entropy += entropy_x
+    return -entropy
+
+def bin_entropy(align):
+    return sum([site_entropy(align[:, site_index]) for site_index in range(align.get_alignment_length())])
