@@ -47,7 +47,7 @@ def run_evaluate(msa_path, prefix, ref_prefix, args = ""):
 def final_llh(prefix):
     if not os.path.isfile(prefix + ".raxml.log"):
         return float("nan")
-    with open(prefix + ".raxml.log", "r", encoding = "uft-8") as logfile:
+    with open(prefix + ".raxml.log", "r", encoding = "utf-8") as logfile:
         lines = logfile.readlines()
     for line in lines:
         if line.startswith("Final LogLikelihood: "):
@@ -63,7 +63,7 @@ def relative_llh(msa_path, prefix):
 
 def train_raxml_ng(msa_dir, target_dir):
     for t in range(10):
-        bin_msa_path = os.path.join(msa_dir, "test", "bin" + str(t) + ".phy")
+        bin_msa_path = os.path.join(msa_dir, "train", "bin" + str(t) + ".phy")
         bin_prefix = os.path.join(target_dir, "train", "bin" + str(t), "BIN")
         run_inference(bin_msa_path, "BIN", bin_prefix)
 
@@ -110,6 +110,8 @@ def differences_analysis(msa_dir, target_dir):
 
 
 def box_plots(results, path):
+    if not os.path.isdir(path):
+        os.makedirs(path)
     models = ["BIN"]
     results_transformed = [[] for _ in range(1)]
     for row in results:
@@ -122,7 +124,7 @@ def box_plots(results, path):
     ax = seaborn.boxplot(data = results_transformed, palette = [cm.to_hex(plt.cm.Set2(num)) for num in range(5)])
     ax.set_xticklabels(models)
     #plt.ylabel(r"$e$ (average)")
-    plt.savefig(path + "/box.png")
+    plt.savefig(os.path.join(path, "box.png"), bbox_inches='tight')
     plt.clf()
     plt.close()
 
@@ -132,12 +134,18 @@ raxmlng_super_dir = "data/bin_cross_validation"
 plots_super_dir = "data/bin_cross_validation_plots"
 all_diff_res = []
 diff_headers = ("dataset", "diff_BIN")
+
+# to use same datasets as in study with kappa subsets
+studied_datasets = ["lieberherrkhobwa-sinotibetan", "bodtkhobwa-sinotibetan", "chaconcolumbian-chibchan", "felekesemitic-afroasiatic", "kesslersignificance-indoeuropean", "chaconcolumbian-huitotoan", "walworthpolynesian-austronesian", "oskolskayatungusic-tungusic", "robbeetstriangulation-mongolic", "listsamplesize-indoeuropean", "robbeetstriangulation-koreanic", "chaconbaniwa-arawakan", "dhakalsouthwesttibetic-sinotibetan", "savelyevturkic-turkic", "leeainu-ainu", "chaconcolumbian-chocoan", "chaconcolumbian-arawakan", "cals-turkic", "constenlachibchan-misumalpan", "nagarajakhasian-austroasiatic", "mixtecansubgrouping-otomanguean", "robbeetstriangulation-tungusic", "mannburmish-sinotibetan", "liusinitic-sinotibetan", "gerarditupi-tupian", "robbeetstriangulation-japonic"]
+
 for train_ratio in [60]:
     for ds_name in os.listdir(msa_super_dir):
+        if ds_name not in studied_datasets:
+            continue
         msa_dir = os.path.join(msa_super_dir, ds_name, "cv_" + str(train_ratio))
         target_dir = os.path.join(raxmlng_super_dir, ds_name, "cv_" + str(train_ratio))
-        train_raxml_ng(msa_dir, target_dir)
-        test_raxml_ng(msa_dir, target_dir)
+        #train_raxml_ng(msa_dir, target_dir)
+        #test_raxml_ng(msa_dir, target_dir)
         all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir))
     box_plots(all_diff_res, os.path.join(plots_super_dir, "cv_" + str(train_ratio)))
     print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))

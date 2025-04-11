@@ -24,15 +24,20 @@ make
 ```
 Copy the binaries `raxml-ng-COG` and `raxml-ng-COGs` from `raxml-ng-cognate/bin` to `cognate-model/bin`
 
-3. Data
-From lexibench, branch `for_cognate_data`
+3. Generate Lexibench Data
+Clone the [glottolog repo](https://github.com/glottolog/glottolog) to a directory of your choice, then run:
+```
+lexibench --repos data/lexibench download --upgrade
+lexibench --repos data/lexibench lingpy_wordlists --plotstyle 2
+lexibench --repos data/lexibench character_matrices --glottolog <your_glottolog_path> --formats bin.phy bin_part_2.phy bin_part_3.phy bin_part_4.phy bin_part_5.phy bin_part_6.phy bv_part_2.phy bv_part_3.phy bv_part_4.phy bv_part_5.phy bv_part_6.phy --plotstyle 2
+lexibench --repos data/lexibench cross_validation_data
+```
 
 ## Execution:
 Data Properties:
 ```
 python concept_language_ratio.py
 python symbol_counts.py
-python polymorphism_analysis.py
 ```
 Tree Searches and Evaluation:
 ```

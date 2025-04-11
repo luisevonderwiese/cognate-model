@@ -113,7 +113,7 @@ def create_samples(kappa, ratio, msa_dir, cv_msa_dir):
     with open(bv_msa_path, "r", encoding = "utf-8") as msa_file:
         num_sites = int(msa_file.readlines()[0].split(" ")[2])
     smaller_part_size = num_sites * (1 - ratio)
-    if smaller_part_size < 4:
+    if smaller_part_size < 10:
         return False
     with open(bin_msa_path, "r", encoding = "utf-8") as msa_file:
         num_sites_bin = int(msa_file.readlines()[0].split(" ")[2])
@@ -188,11 +188,11 @@ def test_raxml_ng(msa_dir, target_dir, kappa):
     bin_msa_type = "bin_part_" + str(kappa)
     bv_msa_type = "bv_part_" + str(kappa)
     for t in range(10):
-        bin_msa_path = os.path.join(msa_dir, "train", bin_msa_type + str(t) + ".phy")
+        bin_msa_path = os.path.join(msa_dir, "test", bin_msa_type + str(t) + ".phy")
         bin_prefix = os.path.join(target_dir,  "train", bin_msa_type + str(t),  "BIN")
         bin_test_prefix = os.path.join(target_dir, "test", bin_msa_type + str(t),  "BIN")
         run_evaluate(bin_msa_path, bin_test_prefix, bin_prefix)
-        bv_msa_path = os.path.join(msa_dir, "train", bv_msa_type + str(t) + ".phy")
+        bv_msa_path = os.path.join(msa_dir, "test", bv_msa_type + str(t) + ".phy")
         cog_prefix = os.path.join(target_dir, "train", bv_msa_type + str(t),  "COG")
         cog_test_prefix = os.path.join(target_dir, "test", bv_msa_type + str(t),  "COG")
         run_evaluate(bv_msa_path, cog_test_prefix, cog_prefix)
@@ -216,10 +216,10 @@ def analysis(msa_dir, target_dir, kappa):
         for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", bv_msa_type), ("COGs", bv_msa_type), ("GTR", bv_msa_type), ("MK", bv_msa_type)]):
             train_msa_path = os.path.join(msa_dir, "train", msa_type + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, "train", msa_type +  str(t), model)
-            results[m * 2].append(relative_llh(train_msa_path, train_prefix))
+            results[m * 2].append(relative_llh(train_msa_path, train_prefix, kappa, model))
             test_msa_path = os.path.join(msa_dir, "test", msa_type + str(t) + ".phy")
             test_prefix = os.path.join(target_dir, "test", msa_type +  str(t), model)
-            results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix))
+            results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix, kappa, model))
     return [sum(el) / len(el) for el in results]
 
 
@@ -231,14 +231,14 @@ def differences_analysis(msa_dir, target_dir, kappa):
         for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", bv_msa_type), ("COGs", bv_msa_type), ("GTR", bv_msa_type), ("MK", bv_msa_type)]):
             train_msa_path = os.path.join(msa_dir, "train", msa_type + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, "train", msa_type +  str(t), model)
-            rel_train_llh = relative_llh(train_msa_path, train_prefix)
+            rel_train_llh = relative_llh(train_msa_path, train_prefix, kappa, model)
             test_msa_path = os.path.join(msa_dir, "test", msa_type + str(t) + ".phy")
             test_prefix = os.path.join(target_dir, "test", msa_type +  str(t), model)
-            rel_test_llh = relative_llh(test_msa_path, test_prefix)
+            rel_test_llh = relative_llh(test_msa_path, test_prefix, kappa, model)
             results[m].append((rel_test_llh - rel_train_llh) / rel_train_llh)
             #results[m].append(rel_train_llh - rel_test_llh)
-    return [sum(el) / len(el) for el in results]
-
+    rv = [sum(el) / len(el) for el in results]
+    return rv
 
 def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
     bin_msa_type = "bin_part_" + str(kappa)
@@ -258,10 +258,10 @@ def plots(msa_dir, target_dir, kappa, plots_super_dir, ds_name):
         for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", bv_msa_type), ("COGs", bv_msa_type), ("GTR", bv_msa_type), ("MK", bv_msa_type)]):
             train_msa_path = os.path.join(msa_dir, "train", msa_type + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, "train", msa_type +  str(t), model)
-            results[m * 2].append(relative_llh(train_msa_path, train_prefix))
+            results[m * 2].append(relative_llh(train_msa_path, train_prefix, kappa, model))
             test_msa_path = os.path.join(msa_dir, "test", msa_type + str(t) + ".phy")
             test_prefix = os.path.join(target_dir, "test", msa_type +  str(t), model)
-            results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix))
+            results[m * 2 + 1].append(relative_llh(test_msa_path, test_prefix, kappa, model))
     _, ax = plt.subplots()
     ax.bar(ind + offsets[0], results[0], width, label='train BIN', color = cmap_train(0))
     ax.bar(ind + offsets[1], results[1], width, label='test BIN', color = cmap_test(0))
@@ -315,7 +315,11 @@ plots_super_dir = "data/cross_validation_plots"
 for kappa in range(2, 7):
     random.seed(2)
     diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_COGs", "diff_GTR", "diff_MK")
-    for train_ratio in [60]:
+    if kappa == 3:
+        train_ratios = [50, 60, 70, 80, 90]
+    else:
+        train_ratios = [60]
+    for train_ratio in train_ratios:
         all_diff_res = []
         plots_dir = os.path.join(plots_super_dir, "cv_" + str(train_ratio))
         if not os.path.isdir(plots_dir):

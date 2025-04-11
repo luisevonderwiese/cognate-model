@@ -1,5 +1,6 @@
 data/lexibench/bin_cross_validation/*
 data/lexibench/character_matrices/*
+data/lexibench/character_matrices_compatible/*
 data/lexibench/download/*
 data/lexibench/lingpy_wordlists/*
 data/bin_cross_validation/*  
@@ -9,6 +10,7 @@ data/cross_validation_plots/*
 data/inferences/*  
 data/plots/*
 data/properties_plots/*
+data/bin_cross_validation_plots/
 !data/lexibench/etc/*
 
 **/*_cv_*

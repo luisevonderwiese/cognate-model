@@ -127,7 +127,7 @@ def run_raxml_ng(msa_dir, target_dir, kappa):
 def AIC_scores(target_dir, kappa):
     results = []
     #bin_msa_type = "bin_part_" + str(kappa)
-    bv_msa_type = "bv_part_" + str(kappa)
+    bv_msa_type = "bv_part_" + str(kappa)    
     for _, (model, msa_type) in enumerate([("MK", bv_msa_type), ("GTR", bv_msa_type), ("COGs", bv_msa_type), ("COG", bv_msa_type)]):
         prefix = os.path.join(target_dir, msa_type + "_" + model)
         results.append(AIC(prefix))
@@ -140,6 +140,17 @@ def get_all_substitution_rates(raxmlng_super_dir, kappa, s = False):
     for ds_name in os.listdir(raxmlng_super_dir):
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
         bv_msa_type = "bv_part_" + str(kappa)
+        msa_dir = os.path.join(msa_super_dir, ds_name)
+        bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
+        try:
+            with open(bv_msa_path, "r") as msa_file:
+                parts = msa_file.readlines()[0].split(" ")
+                num_chars = int(parts[2])
+                num_langs = int(parts[1])
+        except FileNotFoundError:
+            continue
+        if num_chars < num_langs:
+            continue
         prefix = os.path.join(target_dir, bv_msa_type + "_COG")
         if s:
             prefix += "s"
@@ -158,6 +169,17 @@ def get_all_base_frequencies(raxmlng_super_dir, kappa, s = False):
     for ds_name in os.listdir(raxmlng_super_dir):
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
         bv_msa_type = "bv_part_" + str(kappa)
+        msa_dir = os.path.join(msa_super_dir, ds_name)        
+        bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
+        try:
+            with open(bv_msa_path, "r") as msa_file:
+                parts = msa_file.readlines()[0].split(" ")
+                num_chars = int(parts[2])
+                num_langs = int(parts[1])
+        except FileNotFoundError:
+            continue
+        if num_chars < num_langs:
+            continue
         prefix = os.path.join(target_dir, bv_msa_type + "_COG")
         if s:
             prefix += "s"
@@ -257,9 +279,16 @@ def AIC_analysis(kappa):
         bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
         if not os.path.isfile(bin_msa_path) or not os.path.isfile(bv_msa_path):
             continue
+        with open(bv_msa_path, "r") as msa_file:
+            parts = msa_file.readlines()[0].split(" ")
+            num_chars = int(parts[2])
+            num_langs = int(parts[1])
+        if num_chars < num_langs:
+            continue
         AIC_res.append([ds_name] + AIC_scores(target_dir, kappa))
     violin_plots(AIC_res, os.path.join(plots_super_dir, "AIC_" + str(kappa) + ".png"))
     print(tabulate(AIC_res, tablefmt="pipe", headers = ["dataset", "MK", "GTR", "COGs", "COG"]))
+
 
 
 msa_super_dir = "data/lexibench/character_matrices"
@@ -269,7 +298,7 @@ if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
 
 for kappa in range(2, 6):
-    raxml_ng(kappa)
+    #raxml_ng(kappa)
     AIC_analysis(kappa)
 
     rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + ".png"), "sr")
