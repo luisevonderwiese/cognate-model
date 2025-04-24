@@ -38,6 +38,7 @@ Data Properties:
 ```
 python concept_language_ratio.py
 python symbol_counts.py
+python kappa_subset_sizes.py
 ```
 Tree Searches and Evaluation:
 ```
