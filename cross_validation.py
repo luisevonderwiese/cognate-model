@@ -312,14 +312,10 @@ msa_super_dir = "data/lexibench/character_matrices"
 cv_msa_super_dir = "data/bv_cross_validation_data"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
-for kappa in range(2, 7):
+for kappa in range(3, 4):i #possible to include other kappa subset sizes here
     random.seed(2)
     diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_COGs", "diff_GTR", "diff_MK")
-    if kappa == 3:
-        train_ratios = [50, 60, 70, 80, 90]
-    else:
-        train_ratios = [60]
-    for train_ratio in train_ratios:
+    for train_ratio in [60]: # possible to add different split ratios here
         all_diff_res = []
         plots_dir = os.path.join(plots_super_dir, "cv_" + str(train_ratio))
         if not os.path.isdir(plots_dir):

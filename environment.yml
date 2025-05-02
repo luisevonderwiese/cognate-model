@@ -8,3 +8,6 @@ dependencies:
   - pandas
   - numpy
   - seaborn
+  - pip
+  - pip:
+    - pylexibench
