@@ -144,8 +144,8 @@ for train_ratio in [60]:
             continue
         msa_dir = os.path.join(msa_super_dir, ds_name, "cv_" + str(train_ratio))
         target_dir = os.path.join(raxmlng_super_dir, ds_name, "cv_" + str(train_ratio))
-        #train_raxml_ng(msa_dir, target_dir)
-        #test_raxml_ng(msa_dir, target_dir)
+        train_raxml_ng(msa_dir, target_dir)
+        test_raxml_ng(msa_dir, target_dir)
         all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir))
     box_plots(all_diff_res, os.path.join(plots_super_dir, "cv_" + str(train_ratio)))
     print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))

@@ -312,7 +312,7 @@ msa_super_dir = "data/lexibench/character_matrices"
 cv_msa_super_dir = "data/bv_cross_validation_data"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
-for kappa in range(3, 4):i #possible to include other kappa subset sizes here
+for kappa in range(3, 4): #possible to include other kappa subset sizes here
     random.seed(2)
     diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_COGs", "diff_GTR", "diff_MK")
     for train_ratio in [60]: # possible to add different split ratios here
