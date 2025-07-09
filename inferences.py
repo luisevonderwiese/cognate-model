@@ -104,23 +104,13 @@ def base_frequencies(prefix, x):
 
 
 
-def run_raxml_ng(msa_dir, target_dir, kappa):
-    bin_msa_type = "bin_part_" + str(kappa)
-    bv_msa_type = "bv_part_" + str(kappa)
-    bin_msa_path = os.path.join(msa_dir, bin_msa_type + ".phy")
-    bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
-    x = int(math.pow(2, kappa))
-    bin_prefix = os.path.join(target_dir, bin_msa_type + "_BIN")
-    run_inference(bin_msa_path, "BIN", bin_prefix)
-    cog_prefix = os.path.join(target_dir, bv_msa_type + "_COG")
+def run_raxml_ng(msa_dir, target_dir):
+    bv_msa_path = os.path.join(msa_dir, "bv_six.phy")
+    x = 64
+    cog_prefix = os.path.join(target_dir, "bv_six_COG")
     run_inference(bv_msa_path, "COG" + str(x), cog_prefix)
-    cogs_prefix = os.path.join(target_dir, bv_msa_type + "_COGs")
+    cogs_prefix = os.path.join(target_dir, "bv_six_COGs")
     run_inference(bv_msa_path, "COG" + str(x), cogs_prefix, s = True)
-    gtr_prefix = os.path.join(target_dir, bv_msa_type + "_GTR")
-    run_inference(bv_msa_path, "MULTI" + str(x - 1) + "_GTR", gtr_prefix)
-    mk_prefix = os.path.join(target_dir, bv_msa_type + "_MK")
-    run_inference(bv_msa_path, "MULTI" + str(x - 1) + "_MK", mk_prefix)
-
 
 
 
@@ -135,7 +125,7 @@ def AIC_scores(target_dir, kappa):
 
 
 
-def get_all_substitution_rates(raxmlng_super_dir, kappa, s = False):
+def get_all_substitution_rates(raxmlng_super_dir, s = False, kappa = 6):
     r = {}
     for ds_name in os.listdir(raxmlng_super_dir):
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
@@ -164,7 +154,7 @@ def get_all_substitution_rates(raxmlng_super_dir, kappa, s = False):
         r[ds_name] = f
     return r
 
-def get_all_base_frequencies(raxmlng_super_dir, kappa, s = False):
+def get_all_base_frequencies(raxmlng_super_dir, s = False, kappa = 6):
     r = {}
     for ds_name in os.listdir(raxmlng_super_dir):
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
@@ -256,17 +246,14 @@ def rates_stacked_plot(all_rates, path, plot_type):
     plt.close()
 
 
-def raxml_ng(kappa):
+def raxml_ng():
     for ds_name in os.listdir(msa_super_dir):
         msa_dir = os.path.join(msa_super_dir, ds_name)
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
-        bin_msa_type = "bin_part_" + str(kappa)
-        bv_msa_type = "bv_part_" + str(kappa)
-        bin_msa_path = os.path.join(msa_dir, bin_msa_type + ".phy")
-        bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
-        if not os.path.isfile(bin_msa_path) or not os.path.isfile(bv_msa_path):
+        bv_msa_path = os.path.join(msa_dir, "bv_six.phy")
+        if not os.path.isfile(bv_msa_path):
             continue
-        run_raxml_ng(msa_dir, target_dir, kappa)
+        run_raxml_ng(msa_dir, target_dir)
 
 def AIC_analysis(kappa):
     AIC_res = []
@@ -291,16 +278,15 @@ def AIC_analysis(kappa):
 
 
 
-msa_super_dir = "data/lexibench/character_matrices"
-plots_super_dir = os.path.join("data", "plots")
-raxmlng_super_dir = os.path.join("data","inferences")
+msa_super_dir = "data/lexibench_six/character_matrices"
+plots_super_dir = os.path.join("data", "plots_six")
+raxmlng_super_dir = os.path.join("data","inferences_six")
 if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
 
-for kappa in range(2, 6):
-    #raxml_ng(kappa)
-    AIC_analysis(kappa)
+raxml_ng()
+#AIC_analysis()
 
-    rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + ".png"), "sr")
-    rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa, True), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + "_s.png"), "sr")
-    rates_stacked_plot(get_all_base_frequencies(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "base_frequencies_" + str(kappa) + ".png"), "bf")
+rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir), os.path.join(plots_super_dir, "substitution_rates.png"), "sr")
+rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, True), os.path.join(plots_super_dir, "substitution_rates_s.png"), "sr")
+rates_stacked_plot(get_all_base_frequencies(raxmlng_super_dir), os.path.join(plots_super_dir, "base_frequencies.png"), "bf")
