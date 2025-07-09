@@ -11,6 +11,12 @@ data/inferences/*
 data/plots/*
 data/properties_plots/*
 data/bin_cross_validation_plots/
+data/lexibench_six/*
+data/block_matrices/*
+data/block_matrix_3.phy
+data/inferences_six/*
+old_results/*
+
 !data/lexibench/etc/*
 
 **/*_cv_*
