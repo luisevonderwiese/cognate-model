@@ -299,10 +299,12 @@ if not os.path.isdir(raxmlng_super_dir):
 if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
 
-for kappa in range(2, 6):
+for kappa in range(5, 6):
     raxml_ng(kappa)
     AIC_analysis(kappa)
 
     rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + ".png"), "sr")
     rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa, True), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + "_s.png"), "sr")
     rates_stacked_plot(get_all_base_frequencies(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "base_frequencies_" + str(kappa) + ".png"), "bf")
+    rates_stacked_plot(get_all_base_frequencies(raxmlng_super_dir, kappa, True), os.path.join(plots_super_dir, "base_frequencies_" + str(kappa) + "_s.png"), "bf")
+
