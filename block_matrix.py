@@ -11,7 +11,7 @@ kappa = 3
 
 alignments = {}
 total_num_sites = 0
-base_dir = "data/lexibench/character_matrices_compatible"
+base_dir = "data/lexibench/character_matrices"
 for ds in os.listdir(base_dir):
     msa_path = os.path.join(base_dir, ds, "bv_part_" + str(kappa) + ".phy")
     if not os.path.isfile(msa_path):
