@@ -129,7 +129,7 @@ def get_all_substitution_rates(raxmlng_super_dir, s = False, kappa = 6):
     r = {}
     for ds_name in os.listdir(raxmlng_super_dir):
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
-        bv_msa_type = "bv_part_" + str(kappa)
+        bv_msa_type = "bv_six" 
         msa_dir = os.path.join(msa_super_dir, ds_name)
         bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
         try:
@@ -158,7 +158,7 @@ def get_all_base_frequencies(raxmlng_super_dir, s = False, kappa = 6):
     r = {}
     for ds_name in os.listdir(raxmlng_super_dir):
         target_dir = os.path.join(raxmlng_super_dir, ds_name)
-        bv_msa_type = "bv_part_" + str(kappa)
+        bv_msa_type = "bv_six"
         msa_dir = os.path.join(msa_super_dir, ds_name)        
         bv_msa_path = os.path.join(msa_dir, bv_msa_type + ".phy")
         try:
