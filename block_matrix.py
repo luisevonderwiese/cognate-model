@@ -5,15 +5,17 @@ from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
 from Bio.AlignIO.PhylipIO import RelaxedPhylipWriter
 
-kappa = 3
+#kappa = 3
 
 # determine total_num_sites
 
 alignments = {}
 total_num_sites = 0
-base_dir = "data/lexibench/character_matrices"
+#base_dir = "data/lexibench/character_matrices"
+base_dir = "data/lexibench_six/character_matrices/"
 for ds in os.listdir(base_dir):
-    msa_path = os.path.join(base_dir, ds, "bv_part_" + str(kappa) + ".phy")
+    #msa_path = os.path.join(base_dir, ds, "bv_part_" + str(kappa) + ".phy")
+    msa_path = os.path.join(base_dir, ds, "bv_six.phy")
     if not os.path.isfile(msa_path):
         print("Skipping", ds)
         continue
@@ -36,6 +38,7 @@ for ds, alignment in alignments.items():
     passed_sites += num_sites
 
 block_alignment = MultipleSeqAlignment(new_records, annotations={}, column_annotations={})
-with open("data/block_matrix_" + str(kappa) + ".phy", "w+", encoding = "utf-8") as f:
+#with open("data/block_matrix_" + str(kappa) + ".phy", "w+", encoding = "utf-8") as f:
+with open("data/block_matrix_six.phy", "w+", encoding = "utf-8") as f:
     writer = RelaxedPhylipWriter(f)
     writer.write_alignment(block_alignment)
