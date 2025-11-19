@@ -15,6 +15,9 @@ data/lexibench_six/*
 data/block_matrices/*
 data/block_matrix_3.phy
 data/inferences_six/*
+data/inference*
+data/plots_six/*
+data/block_matrix*
 old_results/*
 
 !data/lexibench/etc/*

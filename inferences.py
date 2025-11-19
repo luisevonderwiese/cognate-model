@@ -203,7 +203,7 @@ def violin_plots(results, path):
     ax.set_xticklabels(models)
     plt.xlabel("model")
     plt.ylabel("AIC")
-    plt.savefig(path)
+    plt.savefig(path, bbox_inches='tight')
     plt.clf()
     plt.close()
 
@@ -287,10 +287,10 @@ def AIC_analysis(kappa):
             continue
         AIC_res.append([ds_name] + AIC_scores(target_dir, kappa))
     violin_plots(AIC_res, os.path.join(plots_super_dir, "AIC_" + str(kappa) + ".png"))
-    print(tabulate(AIC_res, tablefmt="pipe", headers = ["dataset", "MK", "GTR", "COGs", "COG"]))
+    print(tabulate(AIC_res, tablefmt="latex", headers = ["dataset", "MK", "GTR", "COGs", "COG"]))
 
 
-
+plt.rcParams.update({'font.size': 14})
 msa_super_dir = "data/lexibench/character_matrices"
 plots_super_dir = os.path.join("data", "plots")
 raxmlng_super_dir = os.path.join("data","inferences")
@@ -299,12 +299,15 @@ if not os.path.isdir(raxmlng_super_dir):
 if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
 
-for kappa in range(5, 6):
+for kappa in [3, 5]: #possible to include other kappa subset sizes here
     raxml_ng(kappa)
+    plt.rcParams.update({'font.size': 14})
     AIC_analysis(kappa)
-
-    rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + ".png"), "sr")
-    rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa, True), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + "_s.png"), "sr")
-    rates_stacked_plot(get_all_base_frequencies(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "base_frequencies_" + str(kappa) + ".png"), "bf")
-    rates_stacked_plot(get_all_base_frequencies(raxmlng_super_dir, kappa, True), os.path.join(plots_super_dir, "base_frequencies_" + str(kappa) + "_s.png"), "bf")
+    
+    if kappa == 3: #possible to include other kappa subset sizes here
+        plt.rcParams.update({'font.size': 10})
+        rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + ".png"), "sr")
+        rates_stacked_plot(get_all_substitution_rates(raxmlng_super_dir, kappa, True), os.path.join(plots_super_dir, "substitution_rates_" + str(kappa) + "_s.png"), "sr")
+        rates_stacked_plot(get_all_base_frequencies(raxmlng_super_dir, kappa), os.path.join(plots_super_dir, "base_frequencies_" + str(kappa) + ".png"), "bf")
+        rates_stacked_plot(get_all_base_frequencies(raxmlng_super_dir, kappa, True), os.path.join(plots_super_dir, "base_frequencies_" + str(kappa) + "_s.png"), "bf")
 

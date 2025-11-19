@@ -4,6 +4,9 @@ import os
 
 import util
 
+
+plt.rcParams.update({'font.size': 14})
+
 plots_super_dir = "data/properties_plots/"
 msa_super_dir = "data/lexibench/character_matrices/"
 all_counts = []
@@ -53,9 +56,8 @@ for kappa in range(2, 7):
     handles, labels = axes[kappa-2].get_legend_handles_labels()
     all_handles += handles
     all_labels += labels
+fig.tight_layout()
+plt.subplots_adjust(bottom=0.12)
 fig.legend(all_handles, all_labels, loc='lower center', ncol = 5)
-#box = ax.get_position()
-#ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
-#ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), fancybox=True, shadow=True, ncol=11)
 plt.savefig(os.path.join(plots_dir, "concept_language_ratio.png"))
 plt.clf()

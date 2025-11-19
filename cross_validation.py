@@ -213,7 +213,7 @@ def analysis(msa_dir, target_dir, kappa):
     bv_msa_type = "bv_part_" + str(kappa)
     results = [[] for _ in range(8)]
     for t in range(10):
-        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", bv_msa_type), ("COGs", bv_msa_type), ("GTR", bv_msa_type), ("MK", bv_msa_type)]):
+        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("MK", bv_msa_type), ("GTR", bv_msa_type), ("COGs", bv_msa_type), ("COG", bv_msa_type)]):
             train_msa_path = os.path.join(msa_dir, "train", msa_type + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, "train", msa_type +  str(t), model)
             results[m * 2].append(relative_llh(train_msa_path, train_prefix, kappa, model))
@@ -228,7 +228,7 @@ def differences_analysis(msa_dir, target_dir, kappa):
     bv_msa_type = "bv_part_" + str(kappa)
     results = [[] for _ in range(5)]
     for t in range(10):
-        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("COG", bv_msa_type), ("COGs", bv_msa_type), ("GTR", bv_msa_type), ("MK", bv_msa_type)]):
+        for m, (model, msa_type) in enumerate([("BIN", bin_msa_type), ("MK", bv_msa_type), ("GTR", bv_msa_type), ("COGs", bv_msa_type), ("COG", bv_msa_type)]):
             train_msa_path = os.path.join(msa_dir, "train", msa_type + str(t) + ".phy")
             train_prefix = os.path.join(target_dir, "train", msa_type +  str(t), model)
             rel_train_llh = relative_llh(train_msa_path, train_prefix, kappa, model)
@@ -308,13 +308,16 @@ def box_plots(results, path):
     plt.close()
 
 
+
+plt.rcParams.update({'font.size': 14})
+
 msa_super_dir = "data/lexibench/character_matrices"
 cv_msa_super_dir = "data/bv_cross_validation_data"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
 for kappa in range(3, 4): #possible to include other kappa subset sizes here
     random.seed(2)
-    diff_headers = ("dataset", "diff_BIN", "diff_COG", "diff_COGs", "diff_GTR", "diff_MK")
+    diff_headers = ("dataset", "diff_BIN", "diff_MK", "diff_GTR", "diff_COGs", "diff_COG")
     for train_ratio in [60]: # possible to add different split ratios here
         all_diff_res = []
         plots_dir = os.path.join(plots_super_dir, "cv_" + str(train_ratio))
@@ -339,4 +342,4 @@ for kappa in range(3, 4): #possible to include other kappa subset sizes here
             plots(cv_msa_dir, target_dir, kappa, plots_dir, ds_name)
         if len(all_diff_res) > 0:
             box_plots(all_diff_res, os.path.join(plots_dir, str(kappa)))
-        print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))
+        print(tabulate(all_diff_res, tablefmt="latex", headers = diff_headers))

@@ -128,7 +128,7 @@ def box_plots(results, path):
     plt.clf()
     plt.close()
 
-
+plt.rcParams.update({'font.size': 14})
 msa_super_dir = "data/lexibench/bin_cross_validation"
 raxmlng_super_dir = "data/bin_cross_validation"
 plots_super_dir = "data/bin_cross_validation_plots"
@@ -148,4 +148,4 @@ for train_ratio in [60]:
         test_raxml_ng(msa_dir, target_dir)
         all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir))
     box_plots(all_diff_res, os.path.join(plots_super_dir, "cv_" + str(train_ratio)))
-    print(tabulate(all_diff_res, tablefmt="pipe", headers = diff_headers))
+    print(tabulate(all_diff_res, tablefmt="latex", headers = diff_headers))
