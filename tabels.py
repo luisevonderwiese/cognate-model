@@ -1,9 +1,13 @@
 import os
 from tabulate import tabulate
+import pandas as pd
 
 import util
 
 msa_super_dir = "data/lexibench/character_matrices/"
+tabels_dir = "data/tabels"
+if not os.path.isdir(tabels_dir):
+    os.makedirs(tabels_dir)
 
 result1 = []
 result2 = []
@@ -33,7 +37,12 @@ headers = ["dataset"] + ["kappa=" + str(s) for s in range(2, 7)]
 
 table = tabulate(result1, headers, tablefmt = "latex")
 print(table)
+df = pd.DataFrame(result1, columns = headers)
+df.to_csv(os.path.join(tabels_dir, "kappa_subset_sizes.csv"))
 
 table = tabulate(result2, headers, tablefmt = "latex")
 print(table)
+df = pd.DataFrame(result2, columns = headers)
+df.to_csv(os.path.join(tabels_dir, "concepts_over_languages_ratios.csv"))
+
 

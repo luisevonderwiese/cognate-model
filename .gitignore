@@ -20,6 +20,7 @@ data/inference*
 data/plots_six/*
 data/block_matrix*
 old_results/*
+data/tabels/*
 
 !data/lexibench/etc/*
 

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 import seaborn
 import statistics
+import pandas as pd
 
 def run_inference(msa_path, model, prefix, args = ""):
     if not os.path.isfile(msa_path):
@@ -132,6 +133,9 @@ plt.rcParams.update({'font.size': 14})
 msa_super_dir = "data/lexibench/bin_cross_validation"
 raxmlng_super_dir = "data/bin_cross_validation"
 plots_super_dir = "data/bin_cross_validation_plots"
+tables_dir = "data/tabels"
+if not os.path.isdir(tables_dir):
+    os.makedirs(tables_dir)
 all_diff_res = []
 diff_headers = ("dataset", "diff_BIN")
 
@@ -139,9 +143,7 @@ diff_headers = ("dataset", "diff_BIN")
 studied_datasets = ["lieberherrkhobwa-sinotibetan", "bodtkhobwa-sinotibetan", "chaconcolumbian-chibchan", "felekesemitic-afroasiatic", "kesslersignificance-indoeuropean", "chaconcolumbian-huitotoan", "walworthpolynesian-austronesian", "oskolskayatungusic-tungusic", "robbeetstriangulation-mongolic", "listsamplesize-indoeuropean", "robbeetstriangulation-koreanic", "chaconbaniwa-arawakan", "dhakalsouthwesttibetic-sinotibetan", "savelyevturkic-turkic", "leeainu-ainu", "chaconcolumbian-chocoan", "chaconcolumbian-arawakan", "cals-turkic", "constenlachibchan-misumalpan", "nagarajakhasian-austroasiatic", "mixtecansubgrouping-otomanguean", "robbeetstriangulation-tungusic", "mannburmish-sinotibetan", "liusinitic-sinotibetan", "gerarditupi-tupian", "robbeetstriangulation-japonic"]
 
 for train_ratio in [60]:
-    for ds_name in os.listdir(msa_super_dir):
-        if ds_name not in studied_datasets:
-            continue
+    for ds_name in studied_datasets:
         msa_dir = os.path.join(msa_super_dir, ds_name, "cv_" + str(train_ratio))
         target_dir = os.path.join(raxmlng_super_dir, ds_name, "cv_" + str(train_ratio))
         train_raxml_ng(msa_dir, target_dir)
@@ -149,3 +151,5 @@ for train_ratio in [60]:
         all_diff_res.append([ds_name] + differences_analysis(msa_dir, target_dir))
     box_plots(all_diff_res, os.path.join(plots_super_dir, "cv_" + str(train_ratio)))
     print(tabulate(all_diff_res, tablefmt="latex", headers = diff_headers))
+    res_df = pd.DataFrame(all_diff_res, columns = diff_headers)
+    res_df.to_csv(os.path.join(tables_dir, "bin_cross_validation_errors.csv"))

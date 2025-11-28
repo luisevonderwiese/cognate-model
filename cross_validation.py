@@ -6,6 +6,7 @@ import random
 import os
 import math
 import numpy as np
+import pandas as pd
 from tabulate import tabulate
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
@@ -315,6 +316,9 @@ msa_super_dir = "data/lexibench/character_matrices"
 cv_msa_super_dir = "data/bv_cross_validation_data"
 raxmlng_super_dir = "data/cross_validation"
 plots_super_dir = "data/cross_validation_plots"
+tabels_dir = "data/tabels"
+if not os.path.isdir(tabels_dir):
+    os.makedirs(tabels_dir)
 for kappa in range(3, 4): #possible to include other kappa subset sizes here
     random.seed(2)
     diff_headers = ("dataset", "diff_BIN", "diff_MK", "diff_GTR", "diff_COGs", "diff_COG")
@@ -338,8 +342,14 @@ for kappa in range(3, 4): #possible to include other kappa subset sizes here
                 continue
             train_raxml_ng(cv_msa_dir, target_dir, kappa)
             test_raxml_ng(cv_msa_dir, target_dir, kappa)
-            all_diff_res.append([ds_name] + differences_analysis(cv_msa_dir, target_dir, kappa))
+            diff_res = differences_analysis(cv_msa_dir, target_dir, kappa)
+            if diff_res[0] == diff_res[0]:
+                all_diff_res.append([ds_name] + diff_res)
+            else:
+                print(diff_res)
             plots(cv_msa_dir, target_dir, kappa, plots_dir, ds_name)
         if len(all_diff_res) > 0:
             box_plots(all_diff_res, os.path.join(plots_dir, str(kappa)))
         print(tabulate(all_diff_res, tablefmt="latex", headers = diff_headers))
+        res_df = pd.DataFrame(all_diff_res, columns = diff_headers)
+        res_df.to_csv(os.path.join(tabels_dir, "cross_validation_errors_kappa=" + str(kappa) + ".csv"))

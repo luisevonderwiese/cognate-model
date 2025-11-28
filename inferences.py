@@ -4,6 +4,7 @@ from tabulate import tabulate
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 import seaborn
+import pandas as pd
 
 
 
@@ -286,18 +287,23 @@ def AIC_analysis(kappa):
         if num_chars < num_langs:
             continue
         AIC_res.append([ds_name] + AIC_scores(target_dir, kappa))
-    violin_plots(AIC_res, os.path.join(plots_super_dir, "AIC_" + str(kappa) + ".png"))
+    violin_plots(AIC_res, os.path.join(plots_super_dir, "AIC_kappa=" + str(kappa) + ".png"))
+    res_df = pd.DataFrame(AIC_res, columns = ["dataset", "MK", "GTR", "COGs", "COG"])
+    res_df.to_csv(os.path.join(tabels_dir, "AIC_" + str(kappa) + ".csv"))
     print(tabulate(AIC_res, tablefmt="latex", headers = ["dataset", "MK", "GTR", "COGs", "COG"]))
 
 
 plt.rcParams.update({'font.size': 14})
 msa_super_dir = "data/lexibench/character_matrices"
 plots_super_dir = os.path.join("data", "plots")
+tabels_dir = os.path.join("data", "tabels")
 raxmlng_super_dir = os.path.join("data","inferences")
 if not os.path.isdir(raxmlng_super_dir):
     os.makedirs(raxmlng_super_dir)
 if not os.path.isdir(plots_super_dir):
     os.makedirs(plots_super_dir)
+if not os.path.isdir(tabels_dir):
+    os.makedirs(tabels_dir)
 
 for kappa in [3, 5]: #possible to include other kappa subset sizes here
     raxml_ng(kappa)
